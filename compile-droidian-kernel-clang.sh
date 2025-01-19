@@ -2,7 +2,7 @@
 
 ## Script to compile a Droidian kernel with clang
 #
-# Version: 0.0.9
+# Version: 0.0.12
 #
 # Upstream-Name: prebuild-droidian-kernel-script
 # Source: https://github.com/droidian-berb/prebuild-droidian-kernel-script
@@ -50,8 +50,14 @@ ROOTDIR="/opt"
 export ARCH=arm64
 
 fn_install_prereqs() {
- apt-get install linux-packaging-snippets bc bison build-essential ccache curl flex git git-lfs gnupg gperf imagemagick libelf-dev libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 python-is-python3
+apt-get update
+apt-get install linux-packaging-snippets bc bison build-essential ccache curl flex git git-lfs gnupg gperf imagemagick libelf-dev libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 python-is-python3
 # libsdl1.2-dev
+}
+
+fn_install_prereqs_droidian() {
+    apt-get update && apt-get install -y --no-install-recommends linux-packaging-snippets
+    ## releng-tools: craches on arm64 docker host
 }
 
 fn_install_prereqs_droidian_kernel_info() {
@@ -64,13 +70,17 @@ fn_enable_ccache() {
     export CCACHE_EXEC=/usr/bin/ccache
     ccache -M 10G
     ccache -o compression=false
+    ccache -s
+    exit
 }
 
-fn_install_custom-clang() {
-    cd /usr/lib
-    wget https://github.com/droidian-berb/android-platform-prebuilts-clang-host-linux-x86/raw/main/llvm-clang-${CLANG_VERSION}-droidian-x86_aarch64.tar.gz
-    echo "Extracting clang..."
-    tar zxf llvm-clang-${CLANG_VERSION}-droidian-x86_aarch64.tar.gz
+fn_install_custom_clang() {
+    if [ ! -d "/usr/lib/llvm-android-${CLANG_VERSION}/bin" ]; then
+        cd /usr/lib
+        wget https://github.com/droidian-berb/android-platform-prebuilts-clang-host-linux-x86/raw/main/llvm-clang-${CLANG_VERSION}-droidian-x86_aarch64.tar.gz
+        echo "Extracting clang..."
+        tar zxf llvm-clang-${CLANG_VERSION}-droidian-x86_aarch64.tar.gz
+    fi
 }
 
 fn_install_lineage_toolchains() {
@@ -105,7 +115,7 @@ fn_invert_PATH_kernel_snippet() {
 fn_clang_manual_droidian_gcc_vars() {
     ## TODO: review if still needed
     CLANG_PATH="/usr/lib/llvm-android-${CLANG_VERSION}/bin"
-    export PATH="$PATH:${CLANG_PATH}"
+    export PATH="${CLANG_PATH}:$PATH"
 }
 fn_clang_manual_lineage_gcc_vars() {
     ## TODO: review if still needed
@@ -115,16 +125,19 @@ fn_clang_manual_lineage_gcc_vars() {
 
 fn_releng_vars() {
     export ARCH=$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "KERNEL_ARCH" | awk '{print $3}')
+    export ARCH_HOST=$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "DEB_BUILD_ON" | awk '{print $3}')
     ## CLANG_VERSION requires a same name var in kernel-info.mk
     CLANG_VERSION="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^CLANG_VERSION = " | awk '{print $3}')"
+
 }
 
 fn_clang_manual_vars() {
     ## Clang version vars
+    # CLANG_VERSION="6.0-4691093"
     # CLANG_VERSION="9.0-r353983c"
-    # CLANG_VERSION="10.0-r370808"
+    CLANG_VERSION="10.0-r370808"
     # CLANG_VERSION="11.0-r383902" 
-    CLANG_VERSION="12.0-r416183b"
+    # CLANG_VERSION="12.0-r416183b"
     # CLANG_VERSION="14.0-r450784d"
     # CLANG_VERSION="17.0-r487747"
     ## defconfig files vars
@@ -135,7 +148,7 @@ fn_clang_manual_vars() {
     CROSS_TYPE="android" # | gnu
     # COMPILER="aarch64-linux-android-gcc-4.9"
     COMPILER=clang
-    CLANG_PATH="${CLANG_PATH}"
+    # CLANG_PATH="${CLANG_PATH}"
     # CLANG=$CLANG_PATH/clang
     #export PATH=${CLANG_PATH}:$PATH
     #export AS=aarch64-linux-${CROSS_TYPE}-as
@@ -201,7 +214,22 @@ fn_menuconfig() {
     make -C /buildd/sources ARCH=${ARCH} \
 	O=/buildd/sources/out/KERNEL_OBJ \
 	CC=$COMPILER \
-	menuconfig
+	KCONFIG_CONFIG=/buildd/sources/out/KERNEL_OBJ/.config menuconfig
+}
+
+fn_kconfig() {
+    make -C /buildd/sources ARCH=${ARCH} \
+	O=/buildd/sources/out/KERNEL_OBJ \
+	CC=$COMPILER \
+	KCONFIG_CONFIG=/buildd/sources/out/KERNEL_OBJ/.config kconfig
+}
+
+fn_listconfig() {
+    make -C /buildd/sources ARCH=${ARCH} \
+	O=/buildd/sources/out/KERNEL_OBJ \
+	CC=$COMPILER \
+	KCONFIG_CONFIG=/buildd/sources/out/KERNEL_OBJ/.config \
+	./scripts/config --list-config | grep CGROUP_PIDS
 }
 
 fn_olddefconfig() {
@@ -209,6 +237,15 @@ fn_olddefconfig() {
 	O=/buildd/sources/out/KERNEL_OBJ \
 	CC=$COMPILER \
 	KCONFIG_CONFIG=/buildd/sources/out/KERNEL_OBJ/.config olddefconfig
+}
+
+fn_savedefconfig() {
+    cp /buildd/sources/out/KERNEL_OBJ/.config.old \
+       /buildd/sources/out/KERNEL_OBJ/.config
+    make -C /buildd/sources ARCH=${ARCH} \
+	O=/buildd/sources/out/KERNEL_OBJ \
+	CC=$COMPILER \
+	KCONFIG_CONFIG=/buildd/sources/out/KERNEL_OBJ/.config savedefconfig
 }
 
 fn_build_kernel_clang_manual() {
@@ -227,6 +264,12 @@ fn_build_kernel_clang_manual() {
 fn_build_kernel_droidian_releng() {
     ## Reconf PATH in kernel snippet (if using custom gcc)
     ## Pre compile configs
+
+    ## Remove python x86 from control for a arm64 host
+#    if [ "${ARCH_HOST}" == "arm64" ]; then
+#        sed -i '/android-platform-prebuilts-python-linux-x86-2.7.5,/d' /usr/share/linux-packaging-snippets/control.in
+#    fi
+    ## Droidian official configs
     chmod +x /buildd/sources/debian/rules
     cd /buildd/sources
     rm -f debian/control
@@ -235,38 +278,41 @@ fn_build_kernel_droidian_releng() {
     RELENG_HOST_ARCH=${ARCH} releng-build-package
 }
 
-fn_install_prereqs
-fn_enable_ccache
+#fn_enable_ccache
 
 ## Custom lineage build tools
 # fn_install_lineage_toolchains
    ## Need to define paths in kernel-info.mk
 
 if [ "$1" == "releng" ]; then
-    #
+    #fn_install_prereqs
+    ## Install/Upgrade Droidian build tools
+    # fn_install_prereqs_droidian
     #
     ## Use an unofficial kernel-snippet.
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/sid-notuse/kernel-snippet.mk
+    wget -O /usr/share/linux-packaging-snippets/kernel-snippet.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/droidian-extended/kernel-snippet.mk
+#    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk
     #
 #   fn_install_prereqs_droidian_kernel_info
-#   fn_install_custom-clang
     fn_releng_vars
+#    fn_install_custom_clang
     fn_build_kernel_droidian_releng
     #
-    #
+#    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk   #
 elif [ "$1" == "clang" ]; then
+#fn_install_prereqs
     #
-    #
-#   fn_install_prereqs_droidian_kernel_info
-    fn_clang_manual_droidian_gcc_vars
-#   fn_clang_manual_lineage_gcc_vars
+#    fn_install_prereqs_droidian_kernel_info
     fn_clang_manual_vars
-#   fn_menuconfig
-#   fn_mrproper
-#   fn_gen_main_defconfig
-#   fn_set_defconfig
-    #fn_merge_fragments
-#   fn_olddefconfig
+    fn_clang_manual_droidian_gcc_vars
+#    fn_clang_manual_lineage_gcc_vars
+    fn_mrproper
+#    fn_menuconfig
+#    fn_gen_main_defconfig
+#    fn_set_defconfig
+#    fn_merge_fragments
+#    fn_olddefconfig
+#    fn_savedefconfig
     #### fn_build_kernel_clang_manual
 else
     echo
