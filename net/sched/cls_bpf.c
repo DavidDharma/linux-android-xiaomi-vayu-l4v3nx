@@ -531,9 +531,8 @@ static int cls_bpf_change(struct net *net, struct sk_buff *in_skb,
 	*arg = prog;
 	return 0;
 
-	/* Conflict: keep head and add patch codea */
-errout_parms:
-	cls_bpf_free_parms(prog);
+	/* Conflict: keep head and add patch codea
+	 * but after changes errout_parms label is unused, so remove it: */
 errout_idr:
 	if (!oldprog)
 		idr_remove_ext(&head->handle_idr, prog->handle);
