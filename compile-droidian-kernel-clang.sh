@@ -74,13 +74,71 @@ fn_enable_ccache() {
     exit
 }
 
-fn_install_custom_clang() {
-    if [ ! -d "/usr/lib/llvm-android-${CLANG_VERSION}/bin" ]; then
-        cd /usr/lib
-        wget https://github.com/droidian-berb/android-platform-prebuilts-clang-host-linux-x86/raw/main/llvm-clang-${CLANG_VERSION}-droidian-x86_aarch64.tar.gz
-        echo "Extracting clang..."
-        tar zxf llvm-clang-${CLANG_VERSION}-droidian-x86_aarch64.tar.gz
+fn_install_clang_custom() {
+#CLANG_CUSTOM_URL="https://github.com/android-berb/platform.prebuilts.clang.host.linux-x86.git"
+#CLANG_CUSTOM_BRANCH="clang-14-r450784e-a14-x86"
+
+##### Download branch as zip
+    if [ -z "${BUILD_PATH}" ] || [ ! -d "${BUILD_PATH}" ]; then \
+        BUILD_PATH_BASE="/opt"
+
+        echo "Start clang custom download"
+
+	#echo "CLANG_CUSTOM_BRANCH val: $CLANG_CUSTOM_BRANCH"
+	#read -p "CLANG_CUSTOM_URL val: ${CLANG_CUSTOM_URL}"
+	## Check the url for a supported suffix
+        arr_download_types=( "git" )
+        for download_type in ${arr_download_types[@]}; do
+            check_url="$(echo ${CLANG_CUSTOM_URL} | grep -c ${download_type})"
+            [ "${check_url}" -eq "1" ] && break
+        done
+        [ "${check_url}" == "0" ] && abort "Download type \"${download_type}\" not supported"
+        if [ "${download_type}" == "git" ]; then
+	        clang_url_cleaned=$(echo ${CLANG_CUSTOM_URL} | sed "s|.${download_type}$||g")
+            clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
+	        ## The zip natively contains a dir named:
+	           ## <repo>-<branch>
+	        clang_dir_in_zip_name="${clang_dir_name}-${CLANG_CUSTOM_BRANCH}"
+	        ## Download the toolchain
+	        if [ ! -d "${BUILD_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
+                wget ${clang_url_cleaned}/archive/refs/heads/${CLANG_CUSTOM_BRANCH}.zip -O /tmp/${CLANG_CUSTOM_BRANCH}.zip
+            [ "$?" -eq "0" ] || abort "Download failed"
+	        fi
+        fi
+	    ## Extract the toolchain
+	    if [ ! -d "${BUILD_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
+            unzip /tmp/${CLANG_CUSTOM_BRANCH}.zip \
+		-d ${BUILD_PATH_BASE}
+            [ "$?" -eq "0" ] || abort "Unpack failed"
+            rm /tmp/${CLANG_CUSTOM_BRANCH}.zip
+	    fi
+        arr_bins_found=()
+        for bin_found in $(find ${BUILD_PATH_BASE}/${clang_dir_in_zip_name} -wholename '*bin/clang-*'); do
+            bin_path="$(dirname "${bin_found}")"
+            found_in_arr="$(echo ${arr_bins_found[*]} | grep -c "${bin_path}")"
+                echo "found_in_arr: $found_in_arr"
+            if [ "${found_in_arr}" -eq "0" ] ; then
+                arr_bins_found+=( "${bin_path}" )
+            fi
+        done
+        if [ "${#arr_bins_found[@]}" -eq "0" ]; then
+            abort "No dirs found matching bin/clang"
+        elif [ "${#arr_bins_found[@]}" -eq "1" ]; then
+            export CLANG_CUSTOM_PATH="${arr_bins_found[0]}"
+        elif [ "${#arr_bins_found[@]}" -gt "1" ]; then
+            abort "Found \"${#arr_bins_found[@]}\" dirs matching bin/clang"
+        fi
+        #echo "clang_dir_name val: \"$clang_dir_name\""
+        echo "CLANG_CUSTOM_PATH val: \"$CLANG_CUSTOM_PATH\""
     fi
+
+##### Clone a git repo
+        #BUILD_PATH_BASE="/opt"
+        #clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
+
+#        git clone ${CLANG_CUSTOM_URL} ${BUILD_PATH_BASE}/${clang_dir_name}
+#
+# wget https://github.com/android-berb/platform.prebuilts.clang.host.linux-x86/archive/refs/heads/android-gs-felix-5.10-android14-qpr3.zip -O branch.zip
 }
 
 fn_install_lineage_toolchains() {
@@ -375,7 +433,10 @@ if [ "$1" == "releng" ]; then
     #
 #   fn_install_prereqs_droidian_kernel_info
     fn_kernel_info_vars
-#    fn_install_custom_clang
+    ## Install clang custom if enabled in kernel-info.mk
+    if [ "${CLANG_CUSTOM}" -eq "1" ]; then
+        fn_install_clang_custom
+    fi
     fn_build_kernel_droidian_releng
     #
 #    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk   #
