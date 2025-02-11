@@ -56,7 +56,7 @@ apt-get install linux-packaging-snippets bc bison build-essential ccache curl fl
 }
 
 fn_install_prereqs_droidian() {
-    apt-get update && apt-get install -y --no-install-recommends linux-packaging-snippets
+    apt-get update && apt-get install -y --no-install-recommends linux-packaging-snippets releng-tools
     ## releng-tools: craches on arm64 docker host
 }
 
