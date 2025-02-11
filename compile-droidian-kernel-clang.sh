@@ -123,12 +123,11 @@ fn_clang_manual_lineage_gcc_vars() {
     export PATH=$PATH:$ROOTDIR/build-tools/linux-x86/bin:$ROOTDIR/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9/aarch64-linux-android/bin:$ROOTDIR/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9/bin::$ROOTDIR/android_prebuilts_tools-lineage/linux-x86/bin
 }
 
-fn_releng_vars() {
+fn_kernel_info_vars() {
     export ARCH=$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "KERNEL_ARCH" | awk '{print $3}')
     export ARCH_HOST=$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "DEB_BUILD_ON" | awk '{print $3}')
     ## CLANG_VERSION requires a same name var in kernel-info.mk
     CLANG_VERSION="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^CLANG_VERSION = " | awk '{print $3}')"
-
 }
 
 fn_clang_manual_vars() {
@@ -371,7 +370,7 @@ if [ "$1" == "releng" ]; then
 #    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk
     #
 #   fn_install_prereqs_droidian_kernel_info
-    fn_releng_vars
+    fn_kernel_info_vars
 #    fn_install_custom_clang
     fn_build_kernel_droidian_releng
     #
