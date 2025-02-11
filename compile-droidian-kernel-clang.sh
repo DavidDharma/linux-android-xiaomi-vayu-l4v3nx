@@ -128,6 +128,10 @@ fn_kernel_info_vars() {
     export ARCH_HOST=$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "DEB_BUILD_ON" | awk '{print $3}')
     ## CLANG_VERSION requires a same name var in kernel-info.mk
     CLANG_VERSION="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^CLANG_VERSION = " | awk '{print $3}')"
+    BUILD_PATH="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^BUILD_PATH = " | awk '{print $3}')"
+    CLANG_CUSTOM="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^CLANG_CUSTOM = " | awk '{print $3}')"
+    CLANG_CUSTOM_URL="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^CLANG_CUSTOM_URL = " | awk '{print $3}')"
+    CLANG_CUSTOM_BRANCH="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^CLANG_CUSTOM_BRANCH = " | awk '{print $3}')"
 }
 
 fn_clang_manual_vars() {
