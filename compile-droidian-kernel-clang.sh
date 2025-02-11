@@ -283,6 +283,8 @@ fn_kernel_snippets_custom_wget() {
     wget -O /usr/share/linux-packaging-snippets/kernel-snippet.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet.mk
     wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-clean-deb-toolchain.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet-clang-clean-deb-toolchain.mk
     wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-versions.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet-clang-versions.mk
+    ## Update releng build_package to last unofficial testing
+    wget -O /usr/lib/releng-tools/build_package.sh https://raw.githubusercontent.com/droidian-berb/releng-tools/refs/heads/unofficial-berb-sid/build_package.sh
 }
 
 fn_patch_kernel_snippet_extra_frags_extended() {
