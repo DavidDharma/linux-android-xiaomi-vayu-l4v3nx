@@ -355,7 +355,7 @@ fn_patch_kernel_snippet_kernel_name_developer() {
 if [ "$1" == "releng" ]; then
     #fn_install_prereqs
     ## Install/Upgrade Droidian build tools
-    # fn_install_prereqs_droidian
+    fn_install_prereqs_droidian
     #
     ## Use unofficial-berb kernel snippets mods
     fn_kernel_snippets_custom_wget
