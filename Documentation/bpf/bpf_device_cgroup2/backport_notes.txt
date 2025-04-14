@@ -1,0 +1,64 @@
+Backport bpf device controller for cgroup v2
+into 4.14.355-lts
+
+Commits list creation:
+git log v4.14..v4.15-rc1 --oneline | grep -i bpf
+
+Commits skipped:
+61bd5218eef3 bpf: move global verifier log into verifier environment
+f4ac7e0b5cc8 bpf: move instruction printing into a separate file
+c9c35995bcf8 tools: bpftool: use the kernel's instruction printer
+d66f2b91f95b bpf: don't rely on the verifier lock for metadata_dst allocation
+a2a7d5701052 bpf: write back the verifier log buffer as it gets filled
+67174bb23360 Merge branch 'bpf-get-rid-of-global-verifier-state-and-reuse-instruction-printer'
+
+9cbe1f581d17 tools: bpftool: add pointer to file argument to print_hex()
+1739c26da72c tools: bpftool: fix return value when all eBPF programs have been shown
+1d84487e2a2b tools: bpftool: use err() instead of info() if there are too many insns
+9f606179c849 tools: bpftool: add `bpftool prog help` as real command i.r.t exit code
+d9c0b48db9f4 tools: bpftool: print only one error message on byte parsing failure
+9e2308c133a9 tools: bpftool: print all relevant byte opcodes for "load double word"
+8dfbc6d1d213 tools: bpftool: show that `opcodes` or `file FILE` should be exclusive
+821cfbb0dcfb tools: bpftool: add a command to display bpftool version
+a8e8c0ecb4bb Merge branch 'bpftool-add-a-version-command-and-fix-several-items'
+
+
+b66e907cfee2 tools: bpftool: copy JSON writer from iproute2 repository
+a2bc2e5c2c06 tools: bpftool: add option parsing to bpftool, --help and --version
+d35efba99d92 tools: bpftool: introduce --json and --pretty options
+107f041212c1 tools: bpftool: add JSON output for `bpftool prog dump jited *` command
+f05e2c32f715 tools: bpftool: add JSON output for `bpftool prog dump xlated *` command
+831a0aafe5c3 tools: bpftool: add JSON output for `bpftool map *` commands
+3aaca6bf7a09 tools: bpftool: add JSON output for `bpftool batch file FILE` command
+9a5ab8bf1d6d tools: bpftool: turn err() and info() macros into functions
+004b45c0e51a tools: bpftool: provide JSON output for all possible commands
+47ff7ac6d706 tools: bpftool: add cosmetic changes for the manual pages
+0641c3c890d4 tools: bpftool: update documentation for --json and --pretty usage
+a5dd4982879b Merge branch 'bpftool-JSON'
+
+3fc27b71b894 tools: bpftool: try to mount bpffs if required for pinning objects
+
+b06723da824a bpf: minor cleanups after merge
+5beca081be91 bpf: also improve pattern matches for meta access
+634eab11bd96 bpf: add test cases to bpf selftests to cover all meta tests
+74b200d566f1 Merge branch 'BPF-range-marking-improvements-for-meta-data'
+
+f449657f8353 nfp: bpf: reject TC offload if XDP loaded
+43b45245e5a6 nfp: bpf: fall back to core NIC app if BPF not selected
+53b3847be5cb net: sched: cls_bpf: use bitwise & rather than logical && on gen_flags
+
+928631e05495 bpftool: print program device bound info
+
+012bb8a8b5a2 nfp: bpf: drop support for cls_bpf with legacy actions
+94508438e8ea nfp: bpf: remove the register renumbering leftovers
+5559eedb7812 nfp: bpf: remove unnecessary include of nfp_net.h
+9ce7a956327a nfp: bpf: refactor offload logic
+e4a91cd565e2 nfp: bpf: require seamless reload for program replace
+c1c88eae8a81 nfp: bpf: move program prepare and free into offload.c
+9314c442d7dd nfp: bpf: move translation prepare to offload.c
+c6c580d7bc39 nfp: bpf: move to new BPF program offload infrastructure
+b37a53061310 bpf: remove old offload/analyzer
+8a3b718ac2c2 Merge branch 'bpf-add-offload-as-a-first-class-citizen'
+
+0b1c27db12fd tools: bpftool: move p_err() and p_info() from main.h to common.c
+

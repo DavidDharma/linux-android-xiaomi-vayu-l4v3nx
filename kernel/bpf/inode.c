@@ -404,6 +404,7 @@ struct bpf_prog *bpf_prog_get_type_path(const char *name, enum bpf_prog_type typ
 	return prog;
 }
 EXPORT_SYMBOL(bpf_prog_get_type_path);
+EXPORT_SYMBOL_GPL(bpf_obj_get_user);
 
 /*
  * Display the mount options in /proc/mounts.
