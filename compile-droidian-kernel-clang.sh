@@ -350,6 +350,8 @@ fn_build_kernel_droidian_releng() {
 fn_kernel_snippets_custom_wget() {
     ## Use unofficial-berb kernel snippets mods
     wget -O /usr/share/linux-packaging-snippets/kernel-snippet.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet.mk
+####    cp -v debian/kernel-snippet-berb.mk /usr/share/linux-packaging-snippets/kernel-snippet.mk
+
     wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-clean-deb-toolchain.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet-clang-clean-deb-toolchain.mk
     wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-versions.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet-clang-versions.mk
     ## Update releng build_package to last unofficial testing
@@ -397,8 +399,12 @@ fn_patch_kernel_snippet_kernel_name_developer() {
     sed -i "s/^KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)/KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)-\$(KERNEL_DEVELOPER_NAME)/g" /usr/share/linux-packaging-snippets/kernel-snippet.mk
     ## Get the control override snippet
     wget -O /usr/share/linux-packaging-snippets/kernel-snippet-control-override-developer-name.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/feature/developer-in-kernelname-sid/kernel-snippet-control-override-developer-name.mk
+####    cp -v debian/kernel-snippet-control-override-developer-name.mk /usr/share/linux-packaging-snippets/
+
     ## Get control-developer-name.in
     wget -O /usr/share/linux-packaging-snippets/control-developer-name.in https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/feature/developer-in-kernelname-sid/control-developer-name.in
+####    cp -v debian/control-developer-name.in /usr/share/linux-packaging-snippets/
+
     ## Patch kernel-snippet to include a control
     ## override snippet for custom kernel name
     ## start relative: "-" before, "+" after
