@@ -361,18 +361,24 @@ fn_patch_file_arr_line_num_reference() {
     " "${path}/${file}"
 }
 
-fn_kernel_snippets_custom_wget() {
-    ## Use unofficial-berb kernel snippets mods
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet.mk
-####    cp -v debian/kernel-snippet-berb.mk /usr/share/linux-packaging-snippets/kernel-snippet.mk
-
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-clean-deb-toolchain.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet-clang-clean-deb-toolchain.mk
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-versions.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet-clang-versions.mk
+fn_releng_scripts_mod_wget() {
     ## Update releng build_package to last unofficial testing
     wget -O /usr/lib/releng-tools/build_package.sh https://raw.githubusercontent.com/droidian-berb/releng-tools/refs/heads/unofficial-berb-sid/build_package.sh
 }
 
-fn_patch_kernel_snippet_extra_frags_extended() {
+fn_kernel_snippet_main_wget() {
+    ## Get unofficial-berb kernel snippets mods
+    wget -O /usr/share/linux-packaging-snippets/kernel-snippet.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet.mk
+    #### cp -v debian/kernel-snippet-berb.mk /usr/share/linux-packaging-snippets/kernel-snippet.mk
+}
+
+fn_kernel_snippets_clang() {
+    ## Get clang kernel-snippets from berb-git
+    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-clean-deb-toolchain.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet-clang-clean-deb-toolchain.mk
+    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-versions.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet-clang-versions.mk
+}
+
+fn_kernel_snippets_extra_frag_extended_wget() {
     wget -O /usr/share/linux-packaging-snippets/kernel-snippet-extra-fragments-extended.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/feature/extra-frags-extended/kernel-snippet-extra-fragments-extended.mk
     file="kernel-snippet.mk"
     path="/usr/share/linux-packaging-snippets"
@@ -392,18 +398,15 @@ fn_patch_kernel_snippet_extra_frags_extended() {
     }" "${path}/${file}"
 }
 
-
-
-fn_patch_kernel_snippet_kernel_name_developer() {
+fn_kernel_snippets_dev_name_kernel_wget() {
     ## Add the previous kernel developer at the KERNEL_RELEASE's end
     sed -i "s/^KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(VARIANT)-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)/KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(VARIANT-\$(KERNEL_DEVELOPER_NAME))-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)/g" /usr/share/linux-packaging-snippets/kernel-snippet.mk
     ## Get the control override snippet
     wget -O /usr/share/linux-packaging-snippets/kernel-snippet-control-override-developer-name.mk https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/feature/developer-in-kernelname-sid/kernel-snippet-control-override-developer-name.mk
-####    cp -v debian/kernel-snippet-control-override-developer-name.mk /usr/share/linux-packaging-snippets/
-
+    #### cp -v debian/kernel-snippet-control-override-developer-name.mk /usr/share/linux-packaging-snippets/
     ## Get control-developer-name.in
     wget -O /usr/share/linux-packaging-snippets/control-developer-name.in https://raw.githubusercontent.com/droidian-berb/linux-packaging-snippets/refs/heads/feature/developer-in-kernelname-sid/control-developer-name.in
-####    cp -v debian/control-developer-name.in /usr/share/linux-packaging-snippets/
+    #### cp -v debian/control-developer-name.in /usr/share/linux-packaging-snippets/
 
     ## Patch kernel-snippet to include a control
     ## override snippet for custom kernel name
@@ -434,15 +437,16 @@ if [ "$1" == "releng" ]; then
        ## DONE in the docker image
     ## Install/Upgrade Droidian build tools
     fn_install_prereqs_droidian
-    #
-    ## Use unofficial-berb kernel snippets mods
-    fn_kernel_snippets_custom_wget
-    #
-    ## Patch kernel-snippet with
-       # extended EXTRA_FRAGMENTS
-    fn_patch_kernel_snippet_extra_frags_extended
-       # Add kernel developer to kernel name's end
-    fn_patch_kernel_snippet_kernel_name_developer
+    # Get kernel-snippet main from berb-git
+    fn_kernel_snippets_main_wget
+    ## Get clang kernel-snippets from berb-git
+    fn_kernel_snippets_clang
+    ## Update releng build_package to last unofficial testing
+    fn_releng_scripts_mod_wget
+    # Get kernel-snippet extra fragments extended
+    fn_kernel_snippets_extra_frag_extended_wget
+    # Get kernel-snippet developer name in kernel
+    fn_kernel_snippets_dev_name_kernel_wget
     #
 #    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk
     #
