@@ -49,13 +49,13 @@ ROOTDIR="/opt"
 ## The arch var is used by clang-manual, but not by releng
 export ARCH=arm64
 
-fn_install_prereqs() {
+fn_install_prereqs_kernel_build() {
 apt-get update
 apt-get install linux-packaging-snippets bc bison build-essential ccache curl flex git git-lfs gnupg gperf imagemagick libelf-dev libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 python-is-python3
 # libsdl1.2-dev
 }
 
-fn_install_prereqs_droidian() {
+fn_install_prereqs_droidian-tools() {
     apt-get update && apt-get install -y --no-install-recommends linux-packaging-snippets releng-tools
     ## releng-tools: craches on arm64 docker host
 }
@@ -430,7 +430,8 @@ fn_patch_kernel_snippet_kernel_name_developer() {
    ## Need to define paths in kernel-info.mk
 
 if [ "$1" == "releng" ]; then
-    #fn_install_prereqs ## DONE in the docker image
+#   fn_install_prereqs_kernel_build
+       ## DONE in the docker image
     ## Install/Upgrade Droidian build tools
     fn_install_prereqs_droidian
     #
@@ -455,7 +456,7 @@ if [ "$1" == "releng" ]; then
     #
 #    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk   #
 elif [ "$1" == "clang" ]; then
-#fn_install_prereqs
+#   fn_install_prereqs_kernel_build
     #
 #    fn_install_prereqs_droidian_kernel_info
     fn_clang_manual_vars
