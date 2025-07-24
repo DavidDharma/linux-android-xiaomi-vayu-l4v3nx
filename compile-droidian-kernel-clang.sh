@@ -49,6 +49,16 @@ ROOTDIR="/opt"
 ## The arch var is used by clang-manual, but not by releng
 export ARCH=arm64
 
+fn_enable_ccache() {
+    ## Use ccache tu speedup the build
+    export USE_CCACHE=1
+    export CCACHE_EXEC=/usr/bin/ccache
+    ccache -M 10G
+    ccache -o compression=false
+    ccache -s
+    exit
+}
+
 fn_install_prereqs_kernel_build() {
 apt-get update
 apt-get install linux-packaging-snippets bc bison build-essential ccache curl flex git git-lfs gnupg gperf imagemagick libelf-dev libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 python-is-python3
@@ -62,16 +72,6 @@ fn_install_prereqs_droidian-tools() {
 
 fn_install_prereqs_droidian_kernel_info() {
     apt-get install binutils-aarch64-linux-gnu clang-android-${CLANG_VERSION} gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android libgcc-4.9-dev-aarch64-linux-android-cross
-}
-
-fn_enable_ccache() {
-    ## Use ccache tu speedup the build
-    export USE_CCACHE=1
-    export CCACHE_EXEC=/usr/bin/ccache
-    ccache -M 10G
-    ccache -o compression=false
-    ccache -s
-    exit
 }
 
 fn_install_clang_custom() {
@@ -131,7 +131,6 @@ fn_install_clang_custom() {
         #echo "clang_dir_name val: \"$clang_dir_name\""
         echo "CLANG_CUSTOM_PATH val: \"$CLANG_CUSTOM_PATH\""
     fi
-
 ##### TODO: Cloning a git repo alternate method
         #BUILD_PATH_BASE="/opt"
         #clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
@@ -166,14 +165,6 @@ fn_install_lineage_toolchains() {
     https://android.googlesource.com/kernel/prebuilts/build-tools
     git clone -b ${los_branch} https://github.com/LineageOS/android_prebuilts_tools-lineage.git
 }
-
-fn_invert_PATH_kernel_snippet() {
-    ## NOT USED
-    ## Patch releng kernel-snippet.mk
-    ## To use the lineage toolchain, the FULL_PATH var needs to be defined with the PATH var at the beguin
-    sed -i 's|FULL_PATH = $(BUILD_PATH):$(CURDIR)/debian/path-override:${PATH}|FULL_PATH = ${PATH}:$(BUILD_PATH):$(CURDIR)/debian/path-override|g' /usr/share/linux-packaging-snippets/kernel-snippet.mk
-}
-
 
 ######################################
 ## Clang manual lineage build tools ##
@@ -330,6 +321,13 @@ fn_build_kernel_clang_manual() {
 ###########################################
 ## Droidian releng compilation functions ##
 ###########################################
+fn_invert_PATH_kernel_snippet() {
+    ## NOT USED
+    ## Patch releng kernel-snippet.mk
+    ## To use the lineage toolchain, the FULL_PATH var needs to be defined with the PATH var at the beguin
+    sed -i 's|FULL_PATH = $(BUILD_PATH):$(CURDIR)/debian/path-override:${PATH}|FULL_PATH = ${PATH}:$(BUILD_PATH):$(CURDIR)/debian/path-override|g' /usr/share/linux-packaging-snippets/kernel-snippet.mk
+}
+
 fn_build_kernel_droidian_releng() {
     ## Reconf PATH in kernel snippet (if using custom gcc)
     ## Pre compile configs
@@ -345,6 +343,22 @@ fn_build_kernel_droidian_releng() {
     debian/rules debian/control
     ## Call releng
     RELENG_HOST_ARCH=${ARCH} releng-build-package
+}
+
+fn_patch_file_arr_line_num_reference() {
+    is_patched=$(grep "${arr_lines_to_add[0]}" "${path}/${file}")
+    [ -n "${is_patched}" ] && echo "skipping" && return
+
+    num_line_reference=$(grep -n "${patch_line_reference}" ${path}/${file} | awk -F':' '{print $1}')
+    num_line_start=$((num_line_reference + start_relative))
+    for line in "${arr_lines_to_add[@]}"; do
+        sed -i "${num_line_start}a ${line}" "${path}/${file}"
+        num_line_start=$((num_line_start + 1))
+    done
+    ## Add a blank line after last line
+    sed -i "${num_line_start}a\
+
+    " "${path}/${file}"
 }
 
 fn_kernel_snippets_custom_wget() {
@@ -378,21 +392,7 @@ fn_patch_kernel_snippet_extra_frags_extended() {
     }" "${path}/${file}"
 }
 
-fn_patch_file_arr_line_num_reference() {
-    is_patched=$(grep "${arr_lines_to_add[0]}" "${path}/${file}")
-    [ -n "${is_patched}" ] && echo "skipping" && return
 
-    num_line_reference=$(grep -n "${patch_line_reference}" ${path}/${file} | awk -F':' '{print $1}')
-    num_line_start=$((num_line_reference + start_relative))
-    for line in "${arr_lines_to_add[@]}"; do
-        sed -i "${num_line_start}a ${line}" "${path}/${file}"
-        num_line_start=$((num_line_start + 1))
-    done
-    ## Add a blank line after last line
-    sed -i "${num_line_start}a\
-
-    " "${path}/${file}"
-}
 
 fn_patch_kernel_snippet_kernel_name_developer() {
     ## Add the previous kernel developer at the KERNEL_RELEASE's end
