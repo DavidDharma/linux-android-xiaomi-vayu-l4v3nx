@@ -132,13 +132,21 @@ fn_install_clang_custom() {
         echo "CLANG_CUSTOM_PATH val: \"$CLANG_CUSTOM_PATH\""
     fi
 
-##### Clone a git repo
+##### TODO: Cloning a git repo alternate method
         #BUILD_PATH_BASE="/opt"
         #clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
 
 #        git clone ${CLANG_CUSTOM_URL} ${BUILD_PATH_BASE}/${clang_dir_name}
 #
 # wget https://github.com/android-berb/platform.prebuilts.clang.host.linux-x86/archive/refs/heads/android-gs-felix-5.10-android14-qpr3.zip -O branch.zip
+<< "DISABLED_TAR_SAMPLE"
+    if [ ! -d "/usr/lib/llvm-android-${CLANG_VERSION}/bin" ]; then
+        cd /usr/lib
+        wget https://github.com/droidian-berb/android-platform-prebuilts-clang-host-linux-x86/raw/main/llvm-clang-${CLANG_VERSION}-droidian-x86_aarch64.tar.gz
+        echo "Extracting clang..."
+        tar zxf llvm-clang-${CLANG_VERSION}-droidian-x86_aarch64.tar.gz
+    fi
+DISABLED_TAR_SAMPLE
 }
 
 fn_install_lineage_toolchains() {
@@ -405,8 +413,8 @@ fn_patch_kernel_snippet_kernel_name_developer() {
         'endif'
     )
     ## Disable patching kernel-snippet, the snippet
-    ## will be included in debian/rules instead
-    # fn_patch_file_arr_line_num_reference
+    ## is included in debian/rules instead
+    #fn_patch_file_arr_line_num_reference
 }
 
 #fn_enable_ccache
@@ -416,7 +424,7 @@ fn_patch_kernel_snippet_kernel_name_developer() {
    ## Need to define paths in kernel-info.mk
 
 if [ "$1" == "releng" ]; then
-    #fn_install_prereqs
+    #fn_install_prereqs ## DONE in the docker image
     ## Install/Upgrade Droidian build tools
     fn_install_prereqs_droidian
     #
