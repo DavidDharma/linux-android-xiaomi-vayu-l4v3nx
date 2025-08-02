@@ -65,7 +65,7 @@ apt-get install linux-packaging-snippets bc bison build-essential ccache curl fl
 # libsdl1.2-dev
 }
 
-fn_install_prereqs_droidian-tools() {
+fn_install_prereqs_droidian_tools() {
     apt-get update && apt-get install -y --no-install-recommends linux-packaging-snippets releng-tools
     ## releng-tools: craches on arm64 docker host
 }
@@ -436,7 +436,7 @@ if [ "$1" == "releng" ]; then
 #   fn_install_prereqs_kernel_build
        ## DONE in the docker image
     ## Install/Upgrade Droidian build tools
-    fn_install_prereqs_droidian
+    fn_install_prereqs_droidian_tools
     # Get kernel-snippet main from berb-git
     fn_kernel_snippets_main_wget
     ## Get clang kernel-snippets from berb-git
