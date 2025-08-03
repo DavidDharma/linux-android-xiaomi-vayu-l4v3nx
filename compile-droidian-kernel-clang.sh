@@ -1,11 +1,11 @@
 #!/bin/bash
 
-## Script to compile a Droidian kernel with clang
+## Helper scripts for Droidian kernel compilation
 #
 # Version: 0.0.12
 #
-# Upstream-Name: prebuild-droidian-kernel-script
-# Source: https://github.com/droidian-berb/prebuild-droidian-kernel-script
+# Upstream-Name: berb-kernel-build-helper-scripts
+# Source: https://github.com/berbascum/berb-kernel-build-helper-scripts
 #
 # Copyright (C) 2024 Berbascum <berbascum@ticv.cat>
 # All rights reserved.
