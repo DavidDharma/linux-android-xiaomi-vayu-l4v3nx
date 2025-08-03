@@ -402,11 +402,8 @@ fn_kernel_snippets_dev_name_kernel_wget() {
     ## Add the previous kernel developer at the KERNEL_RELEASE's end
 #    sed -i "s/^KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)/KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(VARIANT)-\$(KERNEL_DEVELOPER_NAME)-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)-\$(KBUILD_DROIDIAN_VERSION)/g" /usr/share/linux-packaging-snippets/kernel-snippet.mk
     ## Get the control override snippet
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-control-override-developer-name.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/developer-in-kernelname-sid/kernel-snippet-control-override-developer-name.mk
-    #### cp -v debian/kernel-snippet-control-override-developer-name.mk /usr/share/linux-packaging-snippets/
-    ## Get control-developer-name.in
-    wget -O /usr/share/linux-packaging-snippets/control-developer-name.in https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/developer-in-kernelname-sid/control-developer-name.in
-    #### cp -v debian/control-developer-name.in /usr/share/linux-packaging-snippets/
+    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-control-override-developer-name.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/kernel-release-extended/control-override-kernel-release-extended.mk
+    #### cp -v debian/control-override-kernel-release-extended.mk /usr/share/linux-packaging-snippets/
 
     ## Patch kernel-snippet to include a control
     ## override snippet for custom kernel name
