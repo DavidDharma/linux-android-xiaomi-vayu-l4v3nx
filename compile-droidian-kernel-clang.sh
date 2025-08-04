@@ -368,14 +368,15 @@ fn_releng_scripts_mod_wget() {
 
 fn_kernel_snippet_main_wget() {
     ## Get unofficial-berb kernel snippets mods
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet.mk
+    wget -O /usr/share/linux-packaging-snippets/kernel-snippet.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced/kernel-snippet.mk
     #### cp -v debian/kernel-snippet-berb.mk /usr/share/linux-packaging-snippets/kernel-snippet.mk
 }
 
 fn_kernel_snippets_clang() {
     ## Get clang kernel-snippets from berb-git
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-clean-deb-toolchain.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet-clang-clean-deb-toolchain.mk
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-versions.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/unofficial-berb-sid/kernel-snippet-clang-versions.mk
+    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-conf-advanced.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced/kernel-snippet-clang-conf-advanced.mk
+    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-clean-deb-toolchain.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced/kernel-snippet-clang-clean-deb-toolchain.mk
+    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-versions.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced/kernel-snippet-clang-versions.mk
 }
 
 fn_kernel_snippets_extra_frag_extended_wget() {
