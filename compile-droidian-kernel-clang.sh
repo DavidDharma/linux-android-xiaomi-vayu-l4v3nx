@@ -376,9 +376,51 @@ fn_patch_file_arr_line_num_reference() {
     " "${path}/${file}"
 }
 
-fn_releng_scripts_mod_wget() {
-    ## Update releng build_package to last unofficial testing
-    wget -O /usr/lib/releng-tools/build_package.sh https://raw.githubusercontent.com/berbascum/releng-tools/refs/heads/unofficial-berb-sid/build_package.sh
+fn_releng_tools_cherry_berb_mods() {
+    ## Patch releng-tools with some berbascum mods on development
+    ## Git config
+    git config --global user.email "build@local.lan"
+    git config --global user.name "build"
+    ## First clone the upstream
+    rm -rf /tmp/releng-tools
+    cd /tmp
+    git clone -b droidian https://github.com/droidian-releng/releng-tools
+    cd releng-tools
+    git remote add origin-berb https://github.com/berbascum/releng-tools
+    git fetch origin-berb
+    ## Cherry-pick "berb-debug" commit:
+       # [releng-tools] debug: Add some messages to show info about branches/tags
+    commit_2_cherry="9c713bbfb172c519a4ec555eda0db63b8ca3e02a"
+    ## commit_2_cherry="9553301851220fc4493cab22ad8ab5c83b07b3c8"
+    git cherry-pick ${commit_2_cherry}
+    if [ "$?" -eq "0" ]; then
+        echo "Cherry-pick OK"
+    else
+        abort "Cherry-pick FAILED"
+    fi
+    ## Cherry-pick "tag-argument" commit:
+       # [releng-tools] tar-argument: Add support for supplying a tag as build_package argument
+    commit_2_cherry="ce4b8444a8921f3923ae0d2acad4fbaf40495145"
+    ## commit_2_cherry="4e61f8d8fb43b775689a19d10cdc10c42bcbb5e8"
+    git cherry-pick ${commit_2_cherry}
+    if [ "$?" -eq "0" ]; then
+        echo "Cherry-pick OK"
+    else
+        abort "Cherry-pick FAILED"
+    fi
+    ## Cherry-pick "clang-custom-support-DEV"
+       # [releng-tools] clang-custom-support: DEVELOP: Add support for supplying a tag as build_package argument
+    commit_2_cherry="0fddd47bcbd3534a02ced392a5c676b6d701b5f3"
+    git cherry-pick ${commit_2_cherry}
+    if [ "$?" -eq "0" ]; then
+        echo "Cherry-pick OK"
+    else
+        abort "Cherry-pick FAILED"
+    fi
+
+    ## Update the system releng scripts
+    cat build_package.sh > /usr/lib/releng-tools/build_package.sh
+    cat build_changelog.py > /usr/lib/releng-tools/build_changelog.py
 }
 
 fn_kernel_snippet_main_wget() {
@@ -455,7 +497,7 @@ if [ "$1" == "releng" ]; then
     ## Get clang kernel-snippets from berb-git
     fn_kernel_snippets_clang
     ## Update releng build_package to last unofficial testing
-    fn_releng_scripts_mod_wget
+    fn_releng_tools_cherry_berb_mods
     # Get kernel-snippet extra fragments extended
     fn_kernel_snippets_extra_frag_extended_wget
     # Get kernel-snippet developer name in kernel
