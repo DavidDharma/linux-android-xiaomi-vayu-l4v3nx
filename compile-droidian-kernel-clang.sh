@@ -196,14 +196,23 @@ fn_clang_manual_lineage_gcc_vars() {
 }
 
 fn_kernel_info_vars() {
-    export ARCH=$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "KERNEL_ARCH" | awk '{print $3}')
-    export ARCH_HOST=$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "DEB_BUILD_ON" | awk '{print $3}')
-    ## CLANG_VERSION requires a same name var in kernel-info.mk
-    CLANG_VERSION="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^CLANG_VERSION = " | awk '{print $3}')"
-    BUILD_PATH="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^BUILD_PATH = " | awk '{print $3}')"
-    CLANG_CUSTOM="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^CLANG_CUSTOM = " | awk '{print $3}')"
-    CLANG_CUSTOM_URL="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^CLANG_CUSTOM_URL = " | awk '{print $3}')"
-    CLANG_CUSTOM_BRANCH="$(cat "${KERNEL_DIR}/debian/kernel-info.mk" | grep "^CLANG_CUSTOM_BRANCH = " | awk '{print $3}')"
+    ## Load vars from kernel-info.mk (make method)
+    ARCH=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(KERNEL_ARCH)")
+    echo "ARCH = ${ARCH}"
+    ARCH_HOST=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(DEB_BUILD_ON)")
+    echo "ARCH_HOST = ${ARCH_HOST}"
+    ## CLANG
+    CLANG_VERSION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_VERSION)")
+    ## CLANG CUSTOM
+    echo "CLANG_VERSION = ${CLANG_VERSION}"
+    CLANG_CUSTOM=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM)")
+    echo "CLANG_CUSTOM = ${CLANG_CUSTOM}"
+    BUILD_PATH=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(BUILD_PATH)")
+    echo "BUILD_PATH = ${BUILD_PATH}"
+    CLANG_CUSTOM_URL=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_URL)")
+    echo "CLANG_CUSTOM_URL = ${CLANG_CUSTOM_URL}"
+    CLANG_CUSTOM_BRANCH=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_BRANCH)")
+    echo "CLANG_CUSTOM_BRANCH = ${CLANG_CUSTOM_BRANCH}"
 }
 
 fn_clang_manual_vars() {
