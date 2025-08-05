@@ -456,11 +456,11 @@ fn_kernel_snippets_extra_frag_extended_wget() {
     }" "${path}/${file}"
 }
 
-fn_kernel_snippets_dev_name_kernel_wget() {
+fn_kernel_snippet_kernel_release_info_extended_wget() {
     ## Add the previous kernel developer at the KERNEL_RELEASE's end
 #    sed -i "s/^KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)/KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(VARIANT)-\$(KERNEL_DEVELOPER_NAME)-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)-\$(KBUILD_DROIDIAN_VERSION)/g" /usr/share/linux-packaging-snippets/kernel-snippet.mk
     ## Get the control override snippet
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-control-override-developer-name.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/kernel-release-extended/control-override-kernel-release-extended.mk
+    wget -O /usr/share/linux-packaging-snippets/control-override-kernel-release-extended.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/kernel-release-extended/control-override-kernel-release-extended.mk
     #### cp -v debian/control-override-kernel-release-extended.mk /usr/share/linux-packaging-snippets/
 
     ## Patch kernel-snippet to include a control
@@ -500,8 +500,8 @@ if [ "$1" == "releng" ]; then
     fn_releng_tools_cherry_berb_mods
     # Get kernel-snippet extra fragments extended
     fn_kernel_snippets_extra_frag_extended_wget
-    # Get kernel-snippet developer name in kernel
-    fn_kernel_snippets_dev_name_kernel_wget
+    # Get kernel-snippet kernel release info extended
+    fn_kernel_snippet_kernel_release_info_extended_wget
     #
 #    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk
     #
