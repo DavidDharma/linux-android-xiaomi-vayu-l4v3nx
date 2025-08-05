@@ -117,7 +117,7 @@ fn_install_clang_custom() {
 	        ## Download the toolchain
 	        if [ ! -d "${BUILD_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
                 wget ${clang_url_cleaned}/archive/refs/heads/${CLANG_CUSTOM_BRANCH}.zip -O /tmp/${CLANG_CUSTOM_BRANCH}.zip
-            [ "$?" -eq "0" ] || abort "Download failed"
+                [ "$?" -eq "0" ] || abort "Download failed"
 	        fi
         fi
 	    ## Extract the toolchain
