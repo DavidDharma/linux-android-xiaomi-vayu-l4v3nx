@@ -213,6 +213,16 @@ fn_kernel_info_vars() {
     echo "CLANG_CUSTOM_URL = ${CLANG_CUSTOM_URL}"
     CLANG_CUSTOM_BRANCH=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_BRANCH)")
     echo "CLANG_CUSTOM_BRANCH = ${CLANG_CUSTOM_BRANCH}"
+    DOWNLOAD_CLANG_CUSTOM=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(DOWNLOAD_CLANG_CUSTOM)")
+    echo "DOWNLOAD_CLANG_CUSTOM = ${DOWNLOAD_CLANG_CUSTOM}"
+    CLANG_CUSTOM_VERSION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_VERSION)")
+    echo "CLANG_CUSTOM_VERSION = ${CLANG_CUSTOM_VERSION}"
+    CLANG_CUSTOM_REVISION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_REVISION)")
+    echo "CLANG_CUSTOM_REVISION = ${CLANG_CUSTOM_REVISION}"
+    CLANG_CUSTOM_FULL_VERSION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_FULL_VERSION)")
+    echo "CLANG_CUSTOM_FULL_VERSION = ${CLANG_CUSTOM_FULL_VERSION}"
+    CLANG_CUSTOM_ANDROID=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_ANDROID)")
+    echo "CLANG_CUSTOM_ANDROID = ${CLANG_CUSTOM_ANDROID}"
 }
 
 fn_clang_manual_vars() {
