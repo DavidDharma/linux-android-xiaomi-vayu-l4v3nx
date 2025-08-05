@@ -493,7 +493,7 @@ if [ "$1" == "releng" ]; then
     ## Install/Upgrade Droidian build tools
     fn_install_prereqs_droidian_tools
     # Get kernel-snippet main from berb-git
-    fn_kernel_snippets_main_wget
+    fn_kernel_snippet_main_wget
     ## Get clang kernel-snippets from berb-git
     fn_kernel_snippets_clang
     ## Update releng build_package to last unofficial testing
