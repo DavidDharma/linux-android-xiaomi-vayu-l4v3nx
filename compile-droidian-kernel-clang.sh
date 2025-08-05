@@ -66,6 +66,21 @@ apt-get install linux-packaging-snippets bc bison build-essential ccache curl fl
 }
 
 fn_install_prereqs_droidian_tools() {
+    ## Update apt
+    apt-get update
+    ## For Debian bullseye clang-11 arm64
+    # apt-get install apt-config-berbascum-bullseye-debian
+    # apt-get install apt-config-berbascum-bookworm-debian
+    ## Add Droidian apt repo
+    apt-get install apt-config-berbascum-trixie-droidian
+    ## Update apt
+    apt-get update
+    apt-get install droidian-apt-config droidian-archive-keyring apt-transport-droidian
+    ## Set Droidian to next
+    echo "Acquire::Droidian::Version "next";" > /etc/apt/apt.conf.d/90-droidian-snapshot
+    ## Update apt
+    apt-get update
+    ## Install Droidian build tools
     apt-get update && apt-get install -y --no-install-recommends linux-packaging-snippets releng-tools
     ## releng-tools: craches on arm64 docker host
 }
