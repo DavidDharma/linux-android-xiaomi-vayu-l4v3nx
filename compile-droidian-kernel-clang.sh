@@ -76,10 +76,10 @@ fn_install_prereqs_droidian_tools() {
     ## Add droidian-kernel-build component apt config
     apt-get install apt-config-berbascum-trixie-droidian-build-kernel
     ## Update apt
-    apt-get update
-    apt-get install droidian-apt-config droidian-archive-keyring apt-transport-droidian
+#    apt-get update
+#    apt-get install droidian-apt-config droidian-archive-keyring apt-transport-droidian
     ## Set Droidian to next
-    echo "Acquire::Droidian::Version "next";" > /etc/apt/apt.conf.d/90-droidian-snapshot
+#    echo "Acquire::Droidian::Version "next";" > /etc/apt/apt.conf.d/90-droidian-snapshot
     ## Update apt
     apt-get update
     ## Install Droidian build tools
