@@ -544,8 +544,8 @@ elif [ "$1" == "clang" ]; then
     fn_clang_manual_vars
     fn_clang_manual_droidian_gcc_vars
 #    fn_clang_manual_lineage_gcc_vars
-    fn_mrproper
-#    fn_menuconfig
+#    fn_mrproper
+    fn_menuconfig
 #    fn_gen_main_defconfig
 #    fn_set_defconfig
 #    fn_merge_fragments
