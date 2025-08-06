@@ -71,8 +71,10 @@ fn_install_prereqs_droidian_tools() {
     ## For Debian bullseye clang-11 arm64
     # apt-get install apt-config-berbascum-bullseye-debian
     # apt-get install apt-config-berbascum-bookworm-debian
-    ## Add Droidian apt repo
+    ## Add droidian component apt config
     apt-get install apt-config-berbascum-trixie-droidian
+    ## Add droidian-kernel-build component apt config
+    apt-get install apt-config-berbascum-trixie-droidian-build-kernel
     ## Update apt
     apt-get update
     apt-get install droidian-apt-config droidian-archive-keyring apt-transport-droidian
