@@ -90,8 +90,12 @@ fn_install_prereqs_droidian_kernel_info() {
 }
 
 fn_install_clang_custom() {
-#CLANG_CUSTOM_URL="https://github.com/android-berb/platform.prebuilts.clang.host.linux-x86.git"
-#CLANG_CUSTOM_BRANCH="clang-14-r450784e-a14-x86"
+    if [ "${DOWNLOAD_CLANG_CUSTOM}" == "1" ]; then
+        echo "DOWNLOAD_CLANG_CUSTOM = 1, will download!"
+    else
+        echo "DOWNLOAD_CLANG_CUSTOM not 1, skipping!"
+        return
+    fi
 
 ##### Download branch as zip
     if [ -z "${BUILD_PATH}" ] || [ ! -d "${BUILD_PATH}" ]; then \
