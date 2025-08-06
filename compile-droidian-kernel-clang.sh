@@ -567,9 +567,7 @@ if [ "$1" == "releng" ]; then
 #   fn_install_prereqs_droidian_kernel_info
     fn_kernel_info_vars
     ## Install clang custom if enabled in kernel-info.mk
-    if [ "${CLANG_CUSTOM}" -eq "1" ]; then
-        fn_install_clang_custom
-    fi
+    fn_install_clang_custom
     fn_build_kernel_droidian_releng
     #
 #    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk   #
