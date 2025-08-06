@@ -446,6 +446,10 @@ fn_releng_tools_cherry_berb_mods() {
     ## Update the system releng scripts
     cat build_package.sh > /usr/lib/releng-tools/build_package.sh
     cat build_changelog.py > /usr/lib/releng-tools/build_changelog.py
+    ## Nightly patching
+    echo "Adding --allow-downgrades to the depends resolver"...
+    sed -i 's/apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes/apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes --allow-downgrades/g' /usr/lib/releng-tools/build_package.sh
+    grep 'pkgProblemResolver=yes' /usr/lib/releng-tools/build_package.sh
 }
 
 fn_kernel_snippet_main_wget() {
