@@ -452,21 +452,46 @@ fn_releng_tools_cherry_berb_mods() {
     grep 'pkgProblemResolver=yes' /usr/lib/releng-tools/build_package.sh
 }
 
+fn_packaging_snippets_upgrade_conf() {
+    snippets_path="/usr/share/linux-packaging-snippets"
+}
+
+fn_get_snippet() {
+    wget -O ${snippets_path}/${snippet_file} ${snippet_url}/${snippet_file}
+    [ -f "debian/${snippet_file}" ] \
+        && cp -av debian/${snippet_file} ${snippets_path}
+}
+
+fn_packaging_snippets_update_from_upstream() {
+    [ -d "/tmp/linux-packaging-snippets" ] && rm -rf /tmp/linux-packaging-snippets
+    git clone https://github.com/droidian/linux-packaging-snippets /tmp/linux-packaging-snippets
+    cp -av /tmp/linux-packaging-snippets/ /usr/share/
+}
+
 fn_kernel_snippet_main_wget() {
     ## Get unofficial-berb kernel snippets mods
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced/kernel-snippet.mk
-    #### cp -v debian/kernel-snippet-berb.mk /usr/share/linux-packaging-snippets/kernel-snippet.mk
+    snippet_url=""
+    snippet_file="kernel-snippet.mk"
+    fn_get_snippet
 }
 
 fn_kernel_snippets_clang() {
     ## Get clang kernel-snippets from berb-git
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-conf-advanced.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced/kernel-snippet-clang-conf-advanced.mk
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-clean-deb-toolchain.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced/kernel-snippet-clang-clean-deb-toolchain.mk
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-clang-versions.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced/kernel-snippet-clang-versions.mk
+    snippet_url="https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced"
+    snippet_file="kernel-snippet-clang-conf-advanced.mk"
+    fn_get_snippet
+    snippet_file="kernel-snippet-clang-clean-deb-toolchain.mk"
+    fn_get_snippet
+    snippet_file="kernel-snippet-clang-versions.mk"
+    fn_get_snippet
+
+    unset snippet_file
 }
 
 fn_kernel_snippets_extra_frag_extended_wget() {
-    wget -O /usr/share/linux-packaging-snippets/kernel-snippet-extra-fragments-extended.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/extra-frags-extended/kernel-snippet-extra-fragments-extended.mk
+    snippet_url="https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/extra-frags-extended"
+    snippet_file="kernel-snippet-extra-fragments-extended.mk"
+    wget -O ${snippets_path}/${snippet_file} ${snippet_url}/${snippet_file}
     file="kernel-snippet.mk"
     path="/usr/share/linux-packaging-snippets"
     patch_line_reference="ifdef KERNEL_CONFIG_EXTRA_FRAGMENTS"
@@ -489,8 +514,9 @@ fn_kernel_snippet_kernel_release_info_extended_wget() {
     ## Add the previous kernel developer at the KERNEL_RELEASE's end
 #    sed -i "s/^KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)/KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(VARIANT)-\$(KERNEL_DEVELOPER_NAME)-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)-\$(KBUILD_DROIDIAN_VERSION)/g" /usr/share/linux-packaging-snippets/kernel-snippet.mk
     ## Get the control override snippet
-    wget -O /usr/share/linux-packaging-snippets/control-override-kernel-release-extended.mk https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/kernel-release-extended/control-override-kernel-release-extended.mk
-    #### cp -v debian/control-override-kernel-release-extended.mk /usr/share/linux-packaging-snippets/
+    snippet_url="https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/kernel-release-extended"
+    snippet_file="control-override-kernel-release-extended.mk"
+    fn_get_snippet
 
     ## Patch kernel-snippet to include a control
     ## override snippet for custom kernel name
@@ -521,12 +547,16 @@ if [ "$1" == "releng" ]; then
        ## DONE in the docker image
     ## Install/Upgrade Droidian build tools
     fn_install_prereqs_droidian_tools
+    ## Update linux-packaging-snippets from upstream
+    fn_packaging_snippets_update_from_upstream
+    ## Update releng build_package to last unofficial testing
+    fn_releng_tools_cherry_berb_mods
+    ## Download testing versions of packaging snippets
+    fn_packaging_snippets_upgrade_conf
     # Get kernel-snippet main from berb-git
     fn_kernel_snippet_main_wget
     ## Get clang kernel-snippets from berb-git
     fn_kernel_snippets_clang
-    ## Update releng build_package to last unofficial testing
-    fn_releng_tools_cherry_berb_mods
     # Get kernel-snippet extra fragments extended
     fn_kernel_snippets_extra_frag_extended_wget
     # Get kernel-snippet kernel release info extended
