@@ -110,8 +110,8 @@ fn_install_clang_custom() {
         # CLANG_CUSTOM_URL git repo url .git suffix
         # Branch: should be specified a branch to clone
         CLANG_CUSTOM_URL="https://github.com/android-berb/platform.prebuilts.clang.host.linux-x86.git"
-        CLANG_CUSTOM_BRANCH="clang-${CLANG_CUSTOM_FULL_VERSION}-a${CLANG_CUSTOM_ANDROID}-x86"
         CLANG_CUSTOM_FULL_VERSION="${CLANG_CUSTOM_VERSION}-${CLANG_CUSTOM_REVISION}"
+        CLANG_CUSTOM_BRANCH="clang-${CLANG_CUSTOM_FULL_VERSION}-a${CLANG_CUSTOM_ANDROID}-x86"
     fi
 
 	## Check the url for a supported suffix
