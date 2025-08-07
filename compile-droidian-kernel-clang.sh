@@ -547,6 +547,10 @@ if [ "$1" == "releng" ]; then
        ## DONE in the docker image
     ## Install/Upgrade Droidian build tools
     fn_install_prereqs_droidian_tools
+#   fn_install_prereqs_droidian_kernel_info
+    fn_kernel_info_vars
+    ## Install clang custom if enabled in kernel-info.mk
+    fn_install_clang_custom
     ## Update linux-packaging-snippets from upstream
     fn_packaging_snippets_update_from_upstream
     ## Update releng build_package to last unofficial testing
@@ -564,13 +568,8 @@ if [ "$1" == "releng" ]; then
     #
 #    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk
     #
-#   fn_install_prereqs_droidian_kernel_info
-    fn_kernel_info_vars
-    ## Install clang custom if enabled in kernel-info.mk
-    fn_install_clang_custom
     fn_build_kernel_droidian_releng
     #
-#    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk   #
 elif [ "$1" == "clang" ]; then
 #   fn_install_prereqs_kernel_build
     #
