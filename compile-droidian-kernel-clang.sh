@@ -45,7 +45,7 @@ KERNEL_DIR="${START_DIR}"
 ## Check for a kernel tree root
 [ -f "$(pwd)/Kconfig" ] || abort "Not in a kernel source dir!"
 
-ROOTDIR="/opt"
+TOOLCHAINS_PATH_BASE="/opt"
 ## The arch var is used by clang-manual, but not by releng
 export ARCH=arm64
 HOST_ARCH="$(uname -m)"
@@ -100,7 +100,6 @@ fn_install_clang_custom() {
         return
     fi
 
-    BUILD_PATH_BASE="/opt"
     echo "Start clang custom download"
     ## Set the default repository for each host arch
     if [ "${HOST_ARCH}" == "aarch64" ]; then
@@ -125,19 +124,19 @@ fn_install_clang_custom() {
 ##### Download packaged file from url
     if [ "${download_type}" == "tar.xz" ]; then
         echo "tar.xz type"
-        if [ -f "/opt/${CLANG_CUSTOM_URL_SUFFIX}" ]; then
-            echo "File /opt/${CLANG_CUSTOM_URL_SUFFIX} already exists!"
+        if [ -f "${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX}" ]; then
+            echo "File ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX} already exists!"
         else
             echo "Downloading ${CLANG_CUSTOM_URL_SUFFIX} to /opt..."
-            wget -O /opt/${CLANG_CUSTOM_URL_SUFFIX} "${CLANG_CUSTOM_URL}"
+            wget -O ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX} "${CLANG_CUSTOM_URL}"
         fi
-        if [ -d "/opt/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}" ]; then
-            echo "Dir /opt/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}} already exists!"
+        if [ -d "${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}" ]; then
+            echo "Dir ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}} already exists!"
         else
-            echo "Extracting /opt/${CLANG_CUSTOM_URL_SUFFIX} to /opt/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}..."
-            tar xf /opt/${CLANG_CUSTOM_URL_SUFFIX} -C /opt
+            echo "Extracting ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX} to ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}..."
+            tar xf ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX} -C ${TOOLCHAINS_PATH_BASE}
         fi
-        BUILD_PATH_CLANG_CUSTOM="/opt/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}/bin"
+        BUILD_PATH_CLANG_CUSTOM="${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}/bin"
         ## Update the BUILD_PATH in kernel-info.mk
         echo "Updating the BUILD_PATH in kernel-info.mk..."
         sed -i "s|^BUILD_PATH = .*|BUILD_PATH = ${BUILD_PATH_CLANG_CUSTOM}|g" ${KERNEL_DIR}/debian/kernel-info.mk
@@ -151,19 +150,18 @@ fn_install_clang_custom() {
 	       ## <repo>-<branch>
 	    clang_dir_in_zip_name="${clang_dir_name}-${CLANG_CUSTOM_BRANCH}"
 	    ## Download the toolchain
-	    if [ ! -d "${BUILD_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
-            wget ${clang_url_cleaned}/archive/refs/heads/${CLANG_CUSTOM_BRANCH}.zip -O /tmp/${CLANG_CUSTOM_BRANCH}.zip
+	    if [ ! -d "${TOOLCHAINS_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
+            wget ${clang_url_cleaned}/archive/refs/heads/${CLANG_CUSTOM_BRANCH}.zip -O $TOOLCHAINS_PATH_BASE/${CLANG_CUSTOM_BRANCH}.zip
             [ "$?" -eq "0" ] || abort "Download failed"
 	    fi
 	    ## Extract the toolchain
-	    if [ ! -d "${BUILD_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
-            unzip /tmp/${CLANG_CUSTOM_BRANCH}.zip \
-		-d ${BUILD_PATH_BASE}
+	    if [ ! -d "${TOOLCHAINS_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
+            unzip $TOOLCHAINS_PATH_BASE/${CLANG_CUSTOM_BRANCH}.zip \
+		-d ${TOOLCHAINS_PATH_BASE}
             [ "$?" -eq "0" ] || abort "Unpack failed"
-            rm /tmp/${CLANG_CUSTOM_BRANCH}.zip
 	    fi
         arr_bins_found=()
-        for bin_found in $(find ${BUILD_PATH_BASE}/${clang_dir_in_zip_name} -wholename '*bin/clang-*'); do
+        for bin_found in $(find ${TOOLCHAINS_PATH_BASE}/${clang_dir_in_zip_name} -wholename '*bin/clang-*'); do
             bin_path="$(dirname "${bin_found}")"
             found_in_arr="$(echo ${arr_bins_found[*]} | grep -c "${bin_path}")"
                 echo "found_in_arr: $found_in_arr"
@@ -181,10 +179,10 @@ fn_install_clang_custom() {
     fi
         echo "CLANG_CUSTOM_PATH = \"$CLANG_CUSTOM_PATH\""
 ##### TODO: Cloning a git repo alternate method
-        #BUILD_PATH_BASE="/opt"
+        #TOOLCHAINS_PATH_BASE="/opt"
         #clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
 
-#        git clone ${CLANG_CUSTOM_URL} ${BUILD_PATH_BASE}/${clang_dir_name}
+#        git clone ${CLANG_CUSTOM_URL} ${TOOLCHAINS_PATH_BASE}/${clang_dir_name}
 #
 # wget https://github.com/android-berb/platform.prebuilts.clang.host.linux-x86/archive/refs/heads/android-gs-felix-5.10-android14-qpr3.zip -O branch.zip
 << "DISABLED_TAR_SAMPLE"
@@ -198,7 +196,7 @@ DISABLED_TAR_SAMPLE
 }
 
 fn_install_lineage_toolchains() {
-    cd /opt
+    cd ${TOOLCHAINS_PATH_BASE}
     # gcc
     git clone -b lineage-18.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git
     #
@@ -225,8 +223,8 @@ fn_clang_manual_droidian_gcc_vars() {
 }
 fn_clang_manual_lineage_gcc_vars() {
     ## TODO: review if still needed
-    #CLANG_PATH="$ROOTDIR/android_prebuilts_clang_kernel_linux-x86_clang-r416183b/bin"
-    export PATH=$PATH:$ROOTDIR/build-tools/linux-x86/bin:$ROOTDIR/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9/aarch64-linux-android/bin:$ROOTDIR/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9/bin::$ROOTDIR/android_prebuilts_tools-lineage/linux-x86/bin
+    #CLANG_PATH="$TOOLCHAINS_PATH_BASE/android_prebuilts_clang_kernel_linux-x86_clang-r416183b/bin"
+    export PATH=$PATH:$TOOLCHAINS_PATH_BASE/build-tools/linux-x86/bin:$TOOLCHAINS_PATH_BASE/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9/aarch64-linux-android/bin:$TOOLCHAINS_PATH_BASE/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9/bin:$TOOLCHAINS_PATH_BASE/android_prebuilts_tools-lineage/linux-x86/bin
 }
 
 fn_kernel_info_vars() {
