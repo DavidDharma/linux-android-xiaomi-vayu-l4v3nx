@@ -48,6 +48,7 @@ KERNEL_DIR="${START_DIR}"
 ROOTDIR="/opt"
 ## The arch var is used by clang-manual, but not by releng
 export ARCH=arm64
+HOST_ARCH="$(uname -m)"
 
 fn_enable_ccache() {
     ## Use ccache tu speedup the build
