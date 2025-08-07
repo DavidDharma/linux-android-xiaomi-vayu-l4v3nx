@@ -100,33 +100,61 @@ fn_install_clang_custom() {
         return
     fi
 
-##### Download branch as zip
-    if [ -z "${BUILD_PATH}" ] || [ ! -d "${BUILD_PATH}" ]; then \
-        BUILD_PATH_BASE="/opt"
+    BUILD_PATH_BASE="/opt"
+    echo "Start clang custom download"
+    ## Set the default repository for each host arch
+    if [ "${HOST_ARCH}" == "aarch64" ]; then
+        CLANG_CUSTOM_URL_SUFFIX="clang-${CLANG_CUSTOM_REVISION}.tar.xz"
+        CLANG_CUSTOM_URL="https://github.com/tomxi1997/AOSP-Clang_arm64/releases/download/v5.1/${CLANG_CUSTOM_URL_SUFFIX}"
+    elif [ "${HOST_ARCH}" == "x86_64" ]; then
+        # CLANG_CUSTOM_URL git repo url .git suffix
+        # Branch: should be specified a branch to clone
+        CLANG_CUSTOM_URL="https://github.com/android-berb/platform.prebuilts.clang.host.linux-x86.git"
+        CLANG_CUSTOM_BRANCH="clang-${CLANG_CUSTOM_FULL_VERSION}-a${CLANG_CUSTOM_ANDROID}-x86"
+        CLANG_CUSTOM_FULL_VERSION="${CLANG_CUSTOM_VERSION}-${CLANG_CUSTOM_REVISION}"
+    fi
 
-        echo "Start clang custom download"
-
-	#echo "CLANG_CUSTOM_BRANCH val: $CLANG_CUSTOM_BRANCH"
-	#read -p "CLANG_CUSTOM_URL val: ${CLANG_CUSTOM_URL}"
 	## Check the url for a supported suffix
-        arr_download_types=( "git" )
-        for download_type in ${arr_download_types[@]}; do
-            check_url="$(echo ${CLANG_CUSTOM_URL} | grep -c ${download_type})"
-            [ "${check_url}" -eq "1" ] && break
-        done
-        [ "${check_url}" == "0" ] && abort "Download type \"${download_type}\" not supported"
-        if [ "${download_type}" == "git" ]; then
-	        clang_url_cleaned=$(echo ${CLANG_CUSTOM_URL} | sed "s|.${download_type}$||g")
-            clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
-	        ## The zip natively contains a dir named:
-	           ## <repo>-<branch>
-	        clang_dir_in_zip_name="${clang_dir_name}-${CLANG_CUSTOM_BRANCH}"
-	        ## Download the toolchain
-	        if [ ! -d "${BUILD_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
-                wget ${clang_url_cleaned}/archive/refs/heads/${CLANG_CUSTOM_BRANCH}.zip -O /tmp/${CLANG_CUSTOM_BRANCH}.zip
-                [ "$?" -eq "0" ] || abort "Download failed"
-	        fi
+    arr_download_types=( "git" "tar.xz" )
+    for download_type in ${arr_download_types[@]}; do
+        check_url="$(echo ${CLANG_CUSTOM_URL} | grep -c "${download_type}$")"
+        [ "${check_url}" -eq "1" ] && break
+    done
+    [ "${check_url}" == "0" ] && abort "Download type \"${download_type}\" not supported"
+
+##### Download packaged file from url
+    if [ "${download_type}" == "tar.xz" ]; then
+        echo "tar.xz type"
+        if [ -f "/opt/${CLANG_CUSTOM_URL_SUFFIX}" ]; then
+            echo "File /opt/${CLANG_CUSTOM_URL_SUFFIX} already exists!"
+        else
+            echo "Downloading ${CLANG_CUSTOM_URL_SUFFIX} to /opt..."
+            wget -O /opt/${CLANG_CUSTOM_URL_SUFFIX} "${CLANG_CUSTOM_URL}"
         fi
+        if [ -d "/opt/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}" ]; then
+            echo "Dir /opt/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}} already exists!"
+        else
+            echo "Extracting /opt/${CLANG_CUSTOM_URL_SUFFIX} to /opt/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}..."
+            tar xf /opt/${CLANG_CUSTOM_URL_SUFFIX} -C /opt
+        fi
+        BUILD_PATH_CLANG_CUSTOM="/opt/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}/bin"
+        ## Update the BUILD_PATH in kernel-info.mk
+        echo "Updating the BUILD_PATH in kernel-info.mk..."
+        sed -i "s|^BUILD_PATH = .*|BUILD_PATH = ${BUILD_PATH_CLANG_CUSTOM}|g" ${KERNEL_DIR}/debian/kernel-info.mk
+
+##### TODO NEEDS REFACT Download git branch as zip
+    elif [ "${download_type}" == "git" ]; then
+        echo "git type"
+	    clang_url_cleaned=$(echo ${CLANG_CUSTOM_URL} | sed "s|.${download_type}$||g")
+        clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
+	    ## The zip natively contains a dir named:
+	       ## <repo>-<branch>
+	    clang_dir_in_zip_name="${clang_dir_name}-${CLANG_CUSTOM_BRANCH}"
+	    ## Download the toolchain
+	    if [ ! -d "${BUILD_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
+            wget ${clang_url_cleaned}/archive/refs/heads/${CLANG_CUSTOM_BRANCH}.zip -O /tmp/${CLANG_CUSTOM_BRANCH}.zip
+            [ "$?" -eq "0" ] || abort "Download failed"
+	    fi
 	    ## Extract the toolchain
 	    if [ ! -d "${BUILD_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
             unzip /tmp/${CLANG_CUSTOM_BRANCH}.zip \
@@ -150,9 +178,8 @@ fn_install_clang_custom() {
         elif [ "${#arr_bins_found[@]}" -gt "1" ]; then
             abort "Found \"${#arr_bins_found[@]}\" dirs matching bin/clang"
         fi
-        #echo "clang_dir_name val: \"$clang_dir_name\""
-        echo "CLANG_CUSTOM_PATH val: \"$CLANG_CUSTOM_PATH\""
     fi
+        echo "CLANG_CUSTOM_PATH = \"$CLANG_CUSTOM_PATH\""
 ##### TODO: Cloning a git repo alternate method
         #BUILD_PATH_BASE="/opt"
         #clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
@@ -382,6 +409,7 @@ fn_build_kernel_droidian_releng() {
     cd /buildd/sources
     rm -f debian/control
     debian/rules debian/control
+
     ## Call releng
     RELENG_HOST_ARCH=${ARCH} releng-build-package
 }
