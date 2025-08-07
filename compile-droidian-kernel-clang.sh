@@ -458,8 +458,8 @@ fn_packaging_snippets_upgrade_conf() {
 
 fn_get_snippet() {
     wget -O ${snippets_path}/${snippet_file} ${snippet_url}/${snippet_file}
-    [ -f "debian/${snippet_file}" ] \
-        && cp -av debian/${snippet_file} ${snippets_path}
+    [ -f "${KERNEL_DIR}/debian/${snippet_file}" ] \
+        && cp -av ${KERNEL_DIR}/debian/${snippet_file} ${snippets_path}
 }
 
 fn_packaging_snippets_update_from_upstream() {
