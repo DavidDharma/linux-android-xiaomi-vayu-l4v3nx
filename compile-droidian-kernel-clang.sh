@@ -470,7 +470,7 @@ fn_packaging_snippets_update_from_upstream() {
 
 fn_kernel_snippet_main_wget() {
     ## Get unofficial-berb kernel snippets mods
-    snippet_url=""
+    snippet_url="https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced"
     snippet_file="kernel-snippet.mk"
     fn_get_snippet
 }
