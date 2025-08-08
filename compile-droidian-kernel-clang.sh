@@ -150,15 +150,15 @@ fn_install_clang_custom() {
 	       ## <repo>-<branch>
 	    clang_dir_in_zip_name="${clang_dir_name}-${CLANG_CUSTOM_BRANCH}"
 	    ## Download the toolchain
-	    if [ ! -d "${TOOLCHAINS_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
-            wget ${clang_url_cleaned}/archive/refs/heads/${CLANG_CUSTOM_BRANCH}.zip -O $TOOLCHAINS_PATH_BASE/${CLANG_CUSTOM_BRANCH}.zip
-            [ "$?" -eq "0" ] || abort "Download failed"
+	    if [ -f "${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_BRANCH}.zip" ]; then
+            echo "File ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_BRANCH}.zip already exist!"
+        else
+            echo "Downloading file ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_BRANCH}.zip..."
+            wget ${clang_url_cleaned}/archive/refs/heads/${CLANG_CUSTOM_BRANCH}.zip -O ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_BRANCH}.zip || abort "Download failed"
 	    fi
 	    ## Extract the toolchain
 	    if [ ! -d "${TOOLCHAINS_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
-            unzip $TOOLCHAINS_PATH_BASE/${CLANG_CUSTOM_BRANCH}.zip \
-		-d ${TOOLCHAINS_PATH_BASE}
-            [ "$?" -eq "0" ] || abort "Unpack failed"
+            unzip -q ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_BRANCH}.zip -d ${TOOLCHAINS_PATH_BASE} || abort "Unpack failed"
 	    fi
         arr_bins_found=()
         for bin_found in $(find ${TOOLCHAINS_PATH_BASE}/${clang_dir_in_zip_name} -wholename '*bin/clang-*'); do
