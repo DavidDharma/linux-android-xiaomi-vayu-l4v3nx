@@ -172,12 +172,14 @@ fn_install_clang_custom() {
         if [ "${#arr_bins_found[@]}" -eq "0" ]; then
             abort "No dirs found matching bin/clang"
         elif [ "${#arr_bins_found[@]}" -eq "1" ]; then
-            export CLANG_CUSTOM_PATH="${arr_bins_found[0]}"
+            BUILD_PATH_CLANG_CUSTOM="${arr_bins_found[0]}"
         elif [ "${#arr_bins_found[@]}" -gt "1" ]; then
             abort "Found \"${#arr_bins_found[@]}\" dirs matching bin/clang"
         fi
+        ## Update the BUILD_PATH in kernel-info.mk
+        echo "Updating the BUILD_PATH in kernel-info.mk..."
+        sed -i "s|^BUILD_PATH = .*|BUILD_PATH = ${BUILD_PATH_CLANG_CUSTOM}|g" ${KERNEL_DIR}/debian/kernel-info.mk
     fi
-        echo "CLANG_CUSTOM_PATH = \"$CLANG_CUSTOM_PATH\""
 ##### TODO: Cloning a git repo alternate method
         #TOOLCHAINS_PATH_BASE="/opt"
         #clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
