@@ -444,29 +444,30 @@ fn_releng_tools_cherry_berb_mods() {
     cd releng-tools
     git remote add origin-berb https://github.com/berbascum/releng-tools
     git fetch origin-berb
-    ## Cherry-pick "berb-debug" commit:
-       # [releng-tools] debug: Add some messages to show info about branches/tags
+    ## Cherry-pick "debug messages extra":
+       ## Branch: feature/berb-debug
+       ## Commit: [releng-tools] debug: Add some messages to show info about branches/tags
     commit_2_cherry="9c713bbfb172c519a4ec555eda0db63b8ca3e02a"
-    ## commit_2_cherry="9553301851220fc4493cab22ad8ab5c83b07b3c8"
     git cherry-pick ${commit_2_cherry}
     if [ "$?" -eq "0" ]; then
         echo "Cherry-pick OK"
     else
         abort "Cherry-pick FAILED"
     fi
-    ## Cherry-pick "tag-argument" commit:
-       # [releng-tools] tar-argument: Add support for supplying a tag as build_package argument
+    ## Cherry-pick "tag as argument":
+       ## Branch: feature/build-package-tag-argument
+       # [releng-tools] tag-argument: Add support for supplying a tag as build_package argument
     commit_2_cherry="ce4b8444a8921f3923ae0d2acad4fbaf40495145"
-    ## commit_2_cherry="4e61f8d8fb43b775689a19d10cdc10c42bcbb5e8"
     git cherry-pick ${commit_2_cherry}
     if [ "$?" -eq "0" ]; then
         echo "Cherry-pick OK"
     else
         abort "Cherry-pick FAILED"
     fi
-    ## Cherry-pick "clang-custom-support-DEV"
-       # [releng-tools] clang-custom-support: DEVELOP: Add support for supplying a tag as build_package argument
-    commit_2_cherry="0fddd47bcbd3534a02ced392a5c676b6d701b5f3"
+    ## Cherry-pick "clang custom support"
+       ## Branch: feature/clang-custom
+       ## Commit: [releng-tools] build-package: add BUILD_PATH_CLANG_CUSTOM as debuild envvar
+    commit_2_cherry="02f0676775c26194b372f611c9332f572d7306fd"
     git cherry-pick ${commit_2_cherry}
     if [ "$?" -eq "0" ]; then
         echo "Cherry-pick OK"
