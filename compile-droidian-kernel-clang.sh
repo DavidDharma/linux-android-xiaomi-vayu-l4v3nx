@@ -137,9 +137,7 @@ fn_install_clang_custom() {
             tar xf ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX} -C ${TOOLCHAINS_PATH_BASE}
         fi
         BUILD_PATH_CLANG_CUSTOM="${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}/bin"
-        ## Update the BUILD_PATH in kernel-info.mk
-        echo "Updating the BUILD_PATH in kernel-info.mk..."
-        sed -i "s|^BUILD_PATH = .*|BUILD_PATH = ${BUILD_PATH_CLANG_CUSTOM}|g" ${KERNEL_DIR}/debian/kernel-info.mk
+        echo "BUILD_PATH_CLANG_CUSTOM = ${BUILD_PATH_CLANG_CUSTOM}"
 
 ##### TODO NEEDS REFACT Download git branch as zip
     elif [ "${download_type}" == "git" ]; then
@@ -176,10 +174,14 @@ fn_install_clang_custom() {
         elif [ "${#arr_bins_found[@]}" -gt "1" ]; then
             abort "Found \"${#arr_bins_found[@]}\" dirs matching bin/clang"
         fi
-        ## Update the BUILD_PATH in kernel-info.mk
-        echo "Updating the BUILD_PATH in kernel-info.mk..."
-        sed -i "s|^BUILD_PATH = .*|BUILD_PATH = ${BUILD_PATH_CLANG_CUSTOM}|g" ${KERNEL_DIR}/debian/kernel-info.mk
+        echo "BUILD_PATH_CLANG_CUSTOM = ${BUILD_PATH_CLANG_CUSTOM}"
     fi
+    ## Update the BUILD_PATH in kernel-info.mk
+    echo "Updating the BUILD_PATH in kernel-info.mk..."
+    var_exist=$(grep "^BUILD_PATH_CLANG_CUSTOM" ${KERNEL_DIR}/debian/kernel-info.mk)
+    [ -n "${var_exist}" ] || sed -i '/^CLANG_CUSTOM = /a\BUILD_PATH_CLANG_CUSTOM = ' ${KERNEL_DIR}/debian/kernel-info.mk
+    sed -i "s|^BUILD_PATH_CLANG_CUSTOM = .*|BUILD_PATH_CLANG_CUSTOM = ${BUILD_PATH_CLANG_CUSTOM}|g" ${KERNEL_DIR}/debian/kernel-info.mk
+
 ##### TODO: Cloning a git repo alternate method
         #TOOLCHAINS_PATH_BASE="/opt"
         #clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
