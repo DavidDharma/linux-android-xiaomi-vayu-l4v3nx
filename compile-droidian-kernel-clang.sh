@@ -93,7 +93,7 @@ fn_install_prereqs_droidian_kernel_info() {
 }
 
 fn_install_clang_custom() {
-    if [ "${DOWNLOAD_CLANG_CUSTOM}" == "1" ]; then
+    if [ "${CLANG_CUSTOM}" == "1" ] && [ "${DOWNLOAD_CLANG_CUSTOM}" == "1" ]; then
         echo "DOWNLOAD_CLANG_CUSTOM = 1, will download!"
     else
         echo "DOWNLOAD_CLANG_CUSTOM not 1, skipping!"
