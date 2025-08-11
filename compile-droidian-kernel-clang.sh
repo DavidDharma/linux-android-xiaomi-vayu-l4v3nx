@@ -4,8 +4,8 @@
 #
 # Version: 0.0.12
 #
-# Upstream-Name: berb-kernel-build-helper-scripts
-# Source: https://github.com/berbascum/berb-kernel-build-helper-scripts
+# Upstream-Name: droidian-kernel-build-helper-scripts
+# Source: https://github.com/berbascum/bdroidian-kernel-build-helper-scripts
 #
 # Copyright (C) 2024 Berbascum <berbascum@ticv.cat>
 # All rights reserved.
