@@ -103,14 +103,16 @@ fn_install_clang_custom() {
     echo "Start clang custom download"
     ## Set the default repository for each host arch
     if [ "${HOST_ARCH}" == "aarch64" ]; then
-        CLANG_CUSTOM_URL_SUFFIX="clang-${CLANG_CUSTOM_REVISION_ARM64}.tar.xz"
-        CLANG_CUSTOM_URL="https://github.com/tomxi1997/AOSP-Clang_arm64/releases/download/v5.1/${CLANG_CUSTOM_URL_SUFFIX}"
+    CLANG_CUSTOM_URL_SUFFIX="${CLANG_CUSTOM_FILE_ARM64}"
+    CLANG_CUSTOM_URL="${CLANG_CUSTOM_URL_ARM64}"
+    CLANG_CUSTOM_BRANCH="${CLANG_CUSTOM_BRANCH_ARM64}"
     elif [ "${HOST_ARCH}" == "x86_64" ]; then
         # CLANG_CUSTOM_URL git repo url .git suffix
         # Branch: should be specified a branch to clone
-        CLANG_CUSTOM_URL="https://github.com/android-berb/platform.prebuilts.clang.host.linux-x86.git"
-        CLANG_CUSTOM_FULL_VERSION="${CLANG_CUSTOM_VERSION_AMD64}-${CLANG_CUSTOM_REVISION_AMD64}"
-        CLANG_CUSTOM_BRANCH="clang-${CLANG_CUSTOM_FULL_VERSION_AMD64}-a${CLANG_CUSTOM_ANDROID_AMD64}-x86"
+
+        CLANG_CUSTOM_URL_SUFFIX="${CLANG_CUSTOM_FILE_AMD64}"
+        CLANG_CUSTOM_URL="${CLANG_CUSTOM_URL_AMD64}"
+        CLANG_CUSTOM_BRANCH="${CLANG_CUSTOM_BRANCH_AMD64}"
     fi
 
     ## Check the url for a supported suffix
