@@ -457,7 +457,7 @@ fn_releng_tools_cherry_berb_mods() {
     ## Cherry-pick "tag as argument":
        ## Branch: feature/build-package-tag-argument
        # [releng-tools] tag-argument: Add support for supplying a tag as build_package argument
-    commit_2_cherry="ce4b8444a8921f3923ae0d2acad4fbaf40495145"
+    commit_2_cherry="92126497b088d2154836515c7de5d3014f1b17e3"
     git cherry-pick ${commit_2_cherry}
     if [ "$?" -eq "0" ]; then
         echo "Cherry-pick OK"
