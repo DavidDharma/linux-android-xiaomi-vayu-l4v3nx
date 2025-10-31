@@ -103,17 +103,17 @@ fn_install_clang_custom() {
     echo "Start clang custom download"
     ## Set the default repository for each host arch
     if [ "${HOST_ARCH}" == "aarch64" ]; then
-        CLANG_CUSTOM_URL_SUFFIX="clang-${CLANG_CUSTOM_REVISION}.tar.xz"
+        CLANG_CUSTOM_URL_SUFFIX="clang-${CLANG_CUSTOM_REVISION_ARM64}.tar.xz"
         CLANG_CUSTOM_URL="https://github.com/tomxi1997/AOSP-Clang_arm64/releases/download/v5.1/${CLANG_CUSTOM_URL_SUFFIX}"
     elif [ "${HOST_ARCH}" == "x86_64" ]; then
         # CLANG_CUSTOM_URL git repo url .git suffix
         # Branch: should be specified a branch to clone
         CLANG_CUSTOM_URL="https://github.com/android-berb/platform.prebuilts.clang.host.linux-x86.git"
-        CLANG_CUSTOM_FULL_VERSION="${CLANG_CUSTOM_VERSION}-${CLANG_CUSTOM_REVISION}"
-        CLANG_CUSTOM_BRANCH="clang-${CLANG_CUSTOM_FULL_VERSION}-a${CLANG_CUSTOM_ANDROID}-x86"
+        CLANG_CUSTOM_FULL_VERSION="${CLANG_CUSTOM_VERSION_AMD64}-${CLANG_CUSTOM_REVISION_AMD64}"
+        CLANG_CUSTOM_BRANCH="clang-${CLANG_CUSTOM_FULL_VERSION_AMD64}-a${CLANG_CUSTOM_ANDROID_AMD64}-x86"
     fi
 
-	## Check the url for a supported suffix
+    ## Check the url for a supported suffix
     arr_download_types=( "git" "tar.xz" )
     for download_type in ${arr_download_types[@]}; do
         check_url="$(echo ${CLANG_CUSTOM_URL} | grep -c "${download_type}$")"
@@ -237,28 +237,43 @@ fn_kernel_info_vars() {
     echo "ARCH = ${ARCH}"
 #    ARCH_HOST=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(DEB_BUILD_ON)")
 #    echo "ARCH_HOST = ${ARCH_HOST}"
-    ## CLANG
-    CLANG_VERSION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_VERSION)")
-    ## CLANG CUSTOM
-    echo "CLANG_VERSION = ${CLANG_VERSION}"
-    CLANG_CUSTOM=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM)")
-    echo "CLANG_CUSTOM = ${CLANG_CUSTOM}"
     BUILD_PATH=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(BUILD_PATH)")
     echo "BUILD_PATH = ${BUILD_PATH}"
-    CLANG_CUSTOM_URL=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_URL)")
-    echo "CLANG_CUSTOM_URL = ${CLANG_CUSTOM_URL}"
-#    CLANG_CUSTOM_BRANCH=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_BRANCH)")
-#    echo "CLANG_CUSTOM_BRANCH = ${CLANG_CUSTOM_BRANCH}"
+    ## CLANG
+    CLANG_VERSION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_VERSION)")
+    echo "CLANG_VERSION = ${CLANG_VERSION}"
+    ## CLANG CUSTOM
+    CLANG_CUSTOM=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM)")
+    echo "CLANG_CUSTOM = ${CLANG_CUSTOM}"
     DOWNLOAD_CLANG_CUSTOM=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(DOWNLOAD_CLANG_CUSTOM)")
     echo "DOWNLOAD_CLANG_CUSTOM = ${DOWNLOAD_CLANG_CUSTOM}"
-    CLANG_CUSTOM_VERSION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_VERSION)")
-    echo "CLANG_CUSTOM_VERSION = ${CLANG_CUSTOM_VERSION}"
-    CLANG_CUSTOM_REVISION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_REVISION)")
-    echo "CLANG_CUSTOM_REVISION = ${CLANG_CUSTOM_REVISION}"
-#    CLANG_CUSTOM_FULL_VERSION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_FULL_VERSION)")
-#    echo "CLANG_CUSTOM_FULL_VERSION = ${CLANG_CUSTOM_FULL_VERSION}"
-    CLANG_CUSTOM_ANDROID=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_ANDROID)")
-    echo "CLANG_CUSTOM_ANDROID = ${CLANG_CUSTOM_ANDROID}"
+    # Arch dependent vars
+    CLANG_CUSTOM_URL_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_URL_AMD64)")
+    echo "CLANG_CUSTOM_URL_AMD64 = ${CLANG_CUSTOM_URL_AMD64}"
+    CLANG_CUSTOM_URL_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_URL_ARM64)")
+    echo "CLANG_CUSTOM_URL_ARM64 = ${CLANG_CUSTOM_URL_ARM64}"
+    CLANG_CUSTOM_BRANCH_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_BRANCH_AMD64)")
+    echo "CLANG_CUSTOM_BRANCH_AMD64 = ${CLANG_CUSTOM_BRANCH_AMD64}"
+    CLANG_CUSTOM_BRANCH_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_BRANCH_ARM64)")
+    echo "CLANG_CUSTOM_BRANCH_ARM64 = ${CLANG_CUSTOM_BRANCH_ARM64}"
+
+    CLANG_CUSTOM_VERSION_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_VERSION_AMD64)")
+    echo "CLANG_CUSTOM_VERSION_AMD64 = ${CLANG_CUSTOM_VERSION_AMD64}"
+    CLANG_CUSTOM_VERSION_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_VERSION_ARM64)")
+    echo "CLANG_CUSTOM_VERSION_ARM64 = ${CLANG_CUSTOM_VERSION_ARM64}"
+
+    CLANG_CUSTOM_REVISION_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_REVISION_AMD64)")
+    echo "CLANG_CUSTOM_REVISION_AMD64 = ${CLANG_CUSTOM_REVISION_AMD64}"
+    CLANG_CUSTOM_REVISION_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_REVISION_ARM64)")
+    echo "CLANG_CUSTOM_REVISION_ARM64 = ${CLANG_CUSTOM_REVISION_ARM64}"
+    CLANG_CUSTOM_ANDROID_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_ANDROID_AMD64)")
+    echo "CLANG_CUSTOM_ANDROID_AMD64 = ${CLANG_CUSTOM_ANDROID_AMD64}"
+    CLANG_CUSTOM_ANDROID_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_ANDROID_ARM64)")
+    echo "CLANG_CUSTOM_ANDROID_ARM64 = ${CLANG_CUSTOM_ANDROID_ARM64}"
+    CLANG_CUSTOM_FILE_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_FILE_AMD64)")
+    echo "CLANG_CUSTOM_FILE_AMD64 = ${CLANG_CUSTOM_FILE_AMD64}"
+    CLANG_CUSTOM_FILE_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_FILE_ARM64)")
+    echo "CLANG_CUSTOM_FILE_ARM64 = ${CLANG_CUSTOM_FILE_ARM64}"
 }
 
 fn_clang_manual_vars() {
