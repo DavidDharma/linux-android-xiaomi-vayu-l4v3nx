@@ -471,16 +471,6 @@ fn_releng_tools_cherry_berb_mods() {
     else
         abort "Cherry-pick FAILED"
     fi
-    ## Cherry-pick "tag as argument":
-       ## Branch: feature/build-package-tag-argument
-       # [releng-tools] tag-argument: Add support for supplying a tag as build_package argument
-    commit_2_cherry="92126497b088d2154836515c7de5d3014f1b17e3"
-    git cherry-pick ${commit_2_cherry}
-    if [ "$?" -eq "0" ]; then
-        echo "Cherry-pick OK"
-    else
-        abort "Cherry-pick FAILED"
-    fi
     ## Cherry-pick "clang custom support"
        ## Branch: feature/clang-custom
        ## Commit: [releng-tools] build-package: add BUILD_PATH_CLANG_CUSTOM as debuild envvar
