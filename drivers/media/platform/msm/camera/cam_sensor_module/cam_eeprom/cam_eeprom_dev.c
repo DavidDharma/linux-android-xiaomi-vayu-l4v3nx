@@ -34,22 +34,21 @@ static long cam_eeprom_subdev_ioctl(struct v4l2_subdev *sd,
 	return rc;
 }
 
-static int cam_eeprom_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+static void cam_eeprom_subdev_close(struct v4l2_subdev *sd)
 {
 	struct cam_eeprom_ctrl_t *e_ctrl =
 		v4l2_get_subdevdata(sd);
 
 	if (!e_ctrl) {
 		CAM_ERR(CAM_EEPROM, "e_ctrl ptr is NULL");
-			return -EINVAL;
+			return;
 	}
 
 	mutex_lock(&(e_ctrl->eeprom_mutex));
 	cam_eeprom_shutdown(e_ctrl);
 	mutex_unlock(&(e_ctrl->eeprom_mutex));
 
-	return 0;
+	return;
 }
 
 int32_t cam_eeprom_update_i2c_info(struct cam_eeprom_ctrl_t *e_ctrl,
@@ -120,7 +119,7 @@ static long cam_eeprom_init_subdev_do_ioctl(struct v4l2_subdev *sd,
 #endif
 
 static const struct v4l2_subdev_internal_ops cam_eeprom_internal_ops = {
-	.close = cam_eeprom_subdev_close,
+	.release = cam_eeprom_subdev_close,
 };
 
 static struct v4l2_subdev_core_ops cam_eeprom_subdev_core_ops = {

@@ -38,22 +38,21 @@ static long cam_csiphy_subdev_ioctl(struct v4l2_subdev *sd,
 	return rc;
 }
 
-static int cam_csiphy_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+static void cam_csiphy_subdev_close(struct v4l2_subdev *sd)
 {
 	struct csiphy_device *csiphy_dev =
 		v4l2_get_subdevdata(sd);
 
 	if (!csiphy_dev) {
 		CAM_ERR(CAM_CSIPHY, "csiphy_dev ptr is NULL");
-		return -EINVAL;
+		return;
 	}
 
 	mutex_lock(&csiphy_dev->mutex);
 	cam_csiphy_shutdown(csiphy_dev);
 	mutex_unlock(&csiphy_dev->mutex);
 
-	return 0;
+	return;
 }
 
 #ifdef CONFIG_COMPAT
@@ -108,7 +107,7 @@ static const struct v4l2_subdev_ops csiphy_subdev_ops = {
 };
 
 static const struct v4l2_subdev_internal_ops csiphy_subdev_intern_ops = {
-	.close = cam_csiphy_subdev_close,
+	.release = cam_csiphy_subdev_close,
 };
 
 static int32_t cam_csiphy_platform_probe(struct platform_device *pdev)

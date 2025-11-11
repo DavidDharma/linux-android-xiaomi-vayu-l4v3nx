@@ -34,22 +34,21 @@ static long cam_ois_subdev_ioctl(struct v4l2_subdev *sd,
 	return rc;
 }
 
-static int cam_ois_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+static void cam_ois_subdev_close(struct v4l2_subdev *sd)
 {
 	struct cam_ois_ctrl_t *o_ctrl =
 		v4l2_get_subdevdata(sd);
 
 	if (!o_ctrl) {
 		CAM_ERR(CAM_OIS, "o_ctrl ptr is NULL");
-			return -EINVAL;
+			return;
 	}
 
 	mutex_lock(&(o_ctrl->ois_mutex));
 	cam_ois_shutdown(o_ctrl);
 	mutex_unlock(&(o_ctrl->ois_mutex));
 
-	return 0;
+	return;
 }
 
 static int32_t cam_ois_update_i2c_info(struct cam_ois_ctrl_t *o_ctrl,
@@ -118,7 +117,7 @@ static long cam_ois_init_subdev_do_ioctl(struct v4l2_subdev *sd,
 #endif
 
 static const struct v4l2_subdev_internal_ops cam_ois_internal_ops = {
-	.close = cam_ois_subdev_close,
+	.release = cam_ois_subdev_close,
 };
 
 static struct v4l2_subdev_core_ops cam_ois_subdev_core_ops = {

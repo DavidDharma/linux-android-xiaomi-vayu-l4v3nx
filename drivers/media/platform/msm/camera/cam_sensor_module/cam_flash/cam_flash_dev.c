@@ -356,22 +356,21 @@ static int32_t cam_flash_i2c_driver_remove(struct i2c_client *client)
 	return rc;
 }
 
-static int cam_flash_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+static void cam_flash_subdev_close(struct v4l2_subdev *sd)
 {
 	struct cam_flash_ctrl *fctrl =
 		v4l2_get_subdevdata(sd);
 
 	if (!fctrl) {
 		CAM_ERR(CAM_FLASH, "Flash ctrl ptr is NULL");
-		return -EINVAL;
+		return;
 	}
 
 	mutex_lock(&fctrl->flash_mutex);
 	cam_flash_shutdown(fctrl);
 	mutex_unlock(&fctrl->flash_mutex);
 
-	return 0;
+	return;
 }
 
 static struct v4l2_subdev_core_ops cam_flash_subdev_core_ops = {
@@ -386,7 +385,7 @@ static struct v4l2_subdev_ops cam_flash_subdev_ops = {
 };
 
 static const struct v4l2_subdev_internal_ops cam_flash_internal_ops = {
-	.close = cam_flash_subdev_close,
+	.release = cam_flash_subdev_close,
 };
 
 static int cam_flash_init_subdev(struct cam_flash_ctrl *fctrl)

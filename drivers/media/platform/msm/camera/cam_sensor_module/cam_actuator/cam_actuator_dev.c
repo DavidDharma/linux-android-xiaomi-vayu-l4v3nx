@@ -79,22 +79,21 @@ static long cam_actuator_init_subdev_do_ioctl(struct v4l2_subdev *sd,
 }
 #endif
 
-static int cam_actuator_subdev_close(struct v4l2_subdev *sd,
-	struct v4l2_subdev_fh *fh)
+static void cam_actuator_subdev_close(struct v4l2_subdev *sd)
 {
 	struct cam_actuator_ctrl_t *a_ctrl =
 		v4l2_get_subdevdata(sd);
 
 	if (!a_ctrl) {
 		CAM_ERR(CAM_ACTUATOR, "a_ctrl ptr is NULL");
-		return -EINVAL;
+		return;
 	}
 
 	mutex_lock(&(a_ctrl->actuator_mutex));
 	cam_actuator_shutdown(a_ctrl);
 	mutex_unlock(&(a_ctrl->actuator_mutex));
 
-	return 0;
+	return;
 }
 
 static struct v4l2_subdev_core_ops cam_actuator_subdev_core_ops = {
@@ -109,7 +108,7 @@ static struct v4l2_subdev_ops cam_actuator_subdev_ops = {
 };
 
 static const struct v4l2_subdev_internal_ops cam_actuator_internal_ops = {
-	.close = cam_actuator_subdev_close,
+	.release = cam_actuator_subdev_close,
 };
 
 static int cam_actuator_init_subdev(struct cam_actuator_ctrl_t *a_ctrl)
