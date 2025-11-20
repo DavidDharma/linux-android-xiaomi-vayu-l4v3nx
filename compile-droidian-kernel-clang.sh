@@ -88,6 +88,18 @@ fn_install_prereqs_droidian_tools() {
     ## releng-tools: craches on arm64 docker host
 }
 
+fn_check_cpio_version() {
+    version_detected="$(apt-cache policy cpio | awk -F ':' '/Candidat/ {print $2}' | awk -F'+' '{print $1}' | sed 's/[[:space:]]//g')"
+    version_unwanted="2.13"
+    [[ "${version_unwanted}" == "${version_detected}" ]] && error "Not use cpio v${version_unwanted}!"
+}
+
+fn_check_mkbootimg_version() {
+    version_detected="$(apt-cache policy mkbootimg | awk -F ':' '/Candidat/ {print $2 ":" $3}' | awk -F'+' '{print $1}' | sed 's/[[:space:]]//g')"
+    version_wanted="2:20.0-3"
+    [[ "${version_wanted}" == "${version_detected}" ]] || error "Use mkbootimg v${version_wanted} from Droidian!"
+}
+
 fn_install_prereqs_droidian_kernel_info() {
     apt-get install binutils-aarch64-linux-gnu clang-android-${CLANG_VERSION} gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android libgcc-4.9-dev-aarch64-linux-android-cross
 }
@@ -586,6 +598,8 @@ if [ "$1" == "releng" ]; then
        ## DONE in the docker image
     ## Install/Upgrade Droidian build tools
     fn_install_prereqs_droidian_tools
+    fn_check_cpio_version
+    fn_check_mkbootimg_version
 #   fn_install_prereqs_droidian_kernel_info
     fn_kernel_info_vars
     ## Install clang custom if enabled in kernel-info.mk
