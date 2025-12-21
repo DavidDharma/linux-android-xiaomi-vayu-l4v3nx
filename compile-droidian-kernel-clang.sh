@@ -606,7 +606,7 @@ if [ "$1" == "releng" ]; then
     fn_install_clang_custom
     ## Update linux-packaging-snippets from upstream
     fn_packaging_snippets_update_from_upstream
-    ## Update releng build_package to last unofficial testing
+    ## Update releng to last unofficial testing
     fn_releng_tools_cherry_berb_mods
     ## Download testing versions of packaging snippets
     fn_packaging_snippets_upgrade_conf
@@ -638,6 +638,9 @@ elif [ "$1" == "clang" ]; then
 #    fn_olddefconfig
 #    fn_savedefconfig
     #### fn_build_kernel_clang_manual
+elif [ "$1" == "droidian-package" ]; then
+    ## Update releng to last unofficial testing
+    fn_releng_tools_cherry_berb_mods
 else
     echo
     echo "Please type \"releng\" or \"clang\""
