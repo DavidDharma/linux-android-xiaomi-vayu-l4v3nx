@@ -593,7 +593,7 @@ fn_kernel_snippet_kernel_release_info_extended_wget() {
 # fn_install_lineage_toolchains
    ## Need to define paths in kernel-info.mk
 
-if [ "$1" == "releng" ]; then
+if [ "$1" == "releng-kernel" ]; then
 #   fn_install_prereqs_kernel_build
        ## DONE in the docker image
     ## Install/Upgrade Droidian build tools
