@@ -39,11 +39,14 @@ abort() {
 }
 
 START_DIR="/buildd/sources"
-KERNEL_DIR="${START_DIR}"
-## Check for /buildd/sources dir
-[ -d "${KERNEL_DIR}" ] || abort "The expected ${KERNEL_DIR} does not exist!"
-## Check for a kernel tree root
-[ -f "$(pwd)/Kconfig" ] || abort "Not in a kernel source dir!"
+
+kernel_dir_checks() {
+   KERNEL_DIR="$(pwd)"
+   ## Check for /buildd/sources dir
+   [ -d "${START_DIR}" ] || abort "The expected ${START_DIR} dir does not exist!"
+   ## Check for a kernel tree root
+   [ -f "${KERNEL_DIR}/Kconfig" ] || abort "Not in a kernel source dir!"
+}
 
 TOOLCHAINS_PATH_BASE="/opt"
 ## The arch var is used by clang-manual, but not by releng
@@ -594,6 +597,7 @@ fn_kernel_snippet_kernel_release_info_extended_wget() {
    ## Need to define paths in kernel-info.mk
 
 if [ "$1" == "releng-kernel" ]; then
+    kernel_dir_checks
 #   fn_install_prereqs_kernel_build
        ## DONE in the docker image
     ## Install/Upgrade Droidian build tools
@@ -624,6 +628,7 @@ if [ "$1" == "releng-kernel" ]; then
     fn_build_kernel_droidian_releng
     #
 elif [ "$1" == "clang" ]; then
+    kernel_dir_checks
 #   fn_install_prereqs_kernel_build
     #
 #    fn_install_prereqs_droidian_kernel_info
