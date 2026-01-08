@@ -248,6 +248,30 @@ fn_clang_manual_lineage_gcc_vars() {
     export PATH=$PATH:$TOOLCHAINS_PATH_BASE/build-tools/linux-x86/bin:$TOOLCHAINS_PATH_BASE/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9/aarch64-linux-android/bin:$TOOLCHAINS_PATH_BASE/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9/bin:$TOOLCHAINS_PATH_BASE/android_prebuilts_tools-lineage/linux-x86/bin
 }
 
+fn_get_kernel_version() {
+    arr_kernel_version=()
+    arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
+    for version_str in ${arr_kernel_version_str[@]}; do
+    arr_kernel_version+=( $(cat ${KERNEL_DIR}/Makefile | grep ${version_str} | head -n 1 | awk '{print $3}') )
+    done
+    KERNEL_BASE_VERSION="${arr_kernel_version[0]}.${arr_kernel_version[1]}-${arr_kernel_version[2]}"
+    KERNEL_BASE_VERSION_SHORT="${arr_kernel_version[0]}.${arr_kernel_version[1]}"
+    DEBUG "build_droidian_kernel: KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}"
+    DEBUG "build_droidian_kernel: KERNEL_VERSION = ${KERNEL_BASE_VERSION_SHORT}"
+}
+
+fn_set_kernel_version_info_mk() {
+    KERNEL_INFO_MK_FILENAME="kernel-info.mk"
+    KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/${KERNEL_INFO_MK_FILENAME}"
+    [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] \
+    && ABORT "build_droidian_kernel: kernel-info.mk not found!"
+    info "build_droidian_kernel: Setting the kernel version in kernel-info.mk..."
+    #replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
+    replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
+    sed -i "s/KERNEL_BASE_VERSION.*/KERNEL_BASE_VERSION\ =\ ${KERNEL_BASE_VERSION}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
+    info "build_droidian_kernel: Kernel version configured on kernel-info.mk"
+}
+
 fn_kernel_info_vars() {
     ## Load vars from kernel-info.mk (make method)
     ARCH=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(KERNEL_ARCH)")
@@ -606,6 +630,12 @@ if [ "$1" == "releng-kernel" ]; then
     fn_check_mkbootimg_version
 #   fn_install_prereqs_droidian_kernel_info
     fn_kernel_info_vars
+
+    ## Get kernel version
+    fn_get_kernel_version
+    ## Set kernel version in kernel-info.mk
+    fn_set_kernel_version_info_mk
+
     ## Install clang custom if enabled in kernel-info.mk
     fn_install_clang_custom
     ## Update linux-packaging-snippets from upstream
