@@ -252,24 +252,28 @@ fn_get_kernel_version() {
     arr_kernel_version=()
     arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
     for version_str in ${arr_kernel_version_str[@]}; do
-    arr_kernel_version+=( $(cat ${KERNEL_DIR}/Makefile | grep ${version_str} | head -n 1 | awk '{print $3}') )
+        arr_kernel_version+=( $(\
+            cat ${KERNEL_DIR}/Makefile \
+            | grep ${version_str} \
+            | head -n 1 \
+            | awk '{print $3}') )
     done
     KERNEL_BASE_VERSION="${arr_kernel_version[0]}.${arr_kernel_version[1]}-${arr_kernel_version[2]}"
     KERNEL_BASE_VERSION_SHORT="${arr_kernel_version[0]}.${arr_kernel_version[1]}"
-    DEBUG "build_droidian_kernel: KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}"
-    DEBUG "build_droidian_kernel: KERNEL_VERSION = ${KERNEL_BASE_VERSION_SHORT}"
+    echo "build_droidian_kernel: KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}"
+    echo "build_droidian_kernel: KERNEL_VERSION = ${KERNEL_BASE_VERSION_SHORT}"
 }
 
 fn_set_kernel_version_info_mk() {
     KERNEL_INFO_MK_FILENAME="kernel-info.mk"
     KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/${KERNEL_INFO_MK_FILENAME}"
     [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] \
-    && ABORT "build_droidian_kernel: kernel-info.mk not found!"
-    info "build_droidian_kernel: Setting the kernel version in kernel-info.mk..."
+    && abort "build_droidian_kernel: kernel-info.mk not found!"
+    echo "build_droidian_kernel: Setting the kernel version in kernel-info.mk..."
     #replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
     replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
     sed -i "s/KERNEL_BASE_VERSION.*/KERNEL_BASE_VERSION\ =\ ${KERNEL_BASE_VERSION}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
-    info "build_droidian_kernel: Kernel version configured on kernel-info.mk"
+    echo "build_droidian_kernel: Kernel version configured on kernel-info.mk"
 }
 
 fn_kernel_info_vars() {
