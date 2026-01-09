@@ -492,6 +492,8 @@ fn_build_kernel_droidian_releng() {
 
     ## Call releng
     RELENG_HOST_ARCH=${ARCH} releng-build-package
+
+    echo; echo "Compilation with droidian-releng finished!"
 }
 
 fn_patch_file_arr_line_num_reference() {
