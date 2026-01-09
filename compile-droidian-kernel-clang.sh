@@ -268,7 +268,7 @@ fn_get_kernel_version() {
     KBUILD_DROIDIAN_VERSION_BASE="$(echo "${KBUILD_DROIDIAN_VERSION_FULL}" | awk -F'-' '{print $1}')"
 }
 
-fn_set_kernel_version_info_mk() {
+fn_kernel_info_mk_vars_write() {
     KERNEL_INFO_MK_FILENAME="kernel-info.mk"
     KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/${KERNEL_INFO_MK_FILENAME}"
     [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] \
@@ -284,7 +284,7 @@ fn_set_kernel_version_info_mk() {
     echo "build_droidian_kernel: Kernel version configured on kernel-info.mk"
 }
 
-fn_kernel_info_vars() {
+fn_kernel_info_mk_vars_load() {
     ## Load vars from kernel-info.mk (make method)
     ARCH=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(KERNEL_ARCH)")
     echo "ARCH = ${ARCH}"
@@ -641,12 +641,13 @@ if [ "$1" == "releng-kernel" ]; then
     fn_check_cpio_version
     fn_check_mkbootimg_version
 #   fn_install_prereqs_droidian_kernel_info
-    fn_kernel_info_vars
 
-    ## Get kernel version
+    ## kernel-info.mk vars
     fn_get_kernel_version
-    ## Set kernel version in kernel-info.mk
-    fn_set_kernel_version_info_mk
+    ## Write var values in the kernel-info.mk
+    fn_kernel_info_mk_vars_write
+    ## Load vars from the kernel-info.mk
+    fn_kernel_info_mk_vars_load
 
     ## Install clang custom if enabled in kernel-info.mk
     fn_install_clang_custom
