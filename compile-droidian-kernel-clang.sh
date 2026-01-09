@@ -327,6 +327,16 @@ fn_kernel_info_mk_vars_load() {
     echo "CLANG_CUSTOM_FILE_AMD64 = ${CLANG_CUSTOM_FILE_AMD64}"
     CLANG_CUSTOM_FILE_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_FILE_ARM64)")
     echo "CLANG_CUSTOM_FILE_ARM64 = ${CLANG_CUSTOM_FILE_ARM64}"
+    ## Kernel info
+    KBUILD_DROIDIAN_VERSION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(KBUILD_DROIDIAN_VERSION)")
+    echo "KBUILD_DROIDIAN_VERSION = ${KBUILD_DROIDIAN_VERSION}"
+    KERNEL_DEVELOPER_NAME=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(KERNEL_DEVELOPER_NAME)")
+    echo "KERNEL_DEVELOPER_NAME = ${KERNEL_DEVELOPER_NAME}"
+    ## Device vars
+    VARIANT=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(VARIANT)")
+    echo "VARIANT = ${VARIANT}"
+    DEVICE_MODEL=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(DEVICE_MODEL)")
+    echo "DEVICE_MODEL = ${DEVICE_MODEL}"
 }
 
 fn_clang_manual_vars() {
