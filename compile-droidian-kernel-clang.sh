@@ -262,6 +262,9 @@ fn_get_kernel_version() {
     KERNEL_BASE_VERSION_SHORT="${arr_kernel_version[0]}.${arr_kernel_version[1]}"
     echo "build_droidian_kernel: KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}"
     echo "build_droidian_kernel: KERNEL_VERSION = ${KERNEL_BASE_VERSION_SHORT}"
+
+    ## Get the droidian's kernel version
+    KBUILD_DROIDIAN_VERSION="$(git tag --sort=-creatordate | head -1 | awk -F'+' '{print $NF}')"
 }
 
 fn_set_kernel_version_info_mk() {
@@ -270,9 +273,13 @@ fn_set_kernel_version_info_mk() {
     [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] \
     && abort "build_droidian_kernel: kernel-info.mk not found!"
     echo "build_droidian_kernel: Setting the kernel version in kernel-info.mk..."
-    #replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
-    replace_pattern="s/KERNEL_BASE_VERSION = .*/KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}/g"
+
+    ## Write kernel version
     sed -i "s/KERNEL_BASE_VERSION.*/KERNEL_BASE_VERSION\ =\ ${KERNEL_BASE_VERSION}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
+
+    ## Write Droidian's kernel version
+    sed -i "s/^[#]KBUILD_DROIDIAN_VERSION.*/KBUILD_DROIDIAN_VERSION = ${KBUILD_DROIDIAN_VERSION}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
+
     echo "build_droidian_kernel: Kernel version configured on kernel-info.mk"
 }
 
