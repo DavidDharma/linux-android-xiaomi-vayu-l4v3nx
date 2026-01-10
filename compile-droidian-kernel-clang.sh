@@ -496,6 +496,60 @@ fn_build_kernel_droidian_releng() {
     echo; echo "Compilation with droidian-releng finished!"
 }
 
+fn_backup_compiled_objects() {
+    ## Define path vars
+    DEBS_OUTPUT_PATH="/buildd"
+    BUILD_OUTPUT_PATH="${KERNEL_DIR}/out"
+    KERNEL_OBJECTS_2_BACKUP_NAME="kernel-droidian-${DEVICE_MODEL}-${KERNEL_BASE_VERSION}-${KERNEL_DEVELOPER_NAME}-${KBUILD_DROIDIAN_VERSION_FULL}"
+    BACKUP_PATH="/buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}"
+
+    ## Check that the .deb objects are found
+    if ! ls ${DEBS_OUTPUT_PATH}/linux* 2>/dev/null; then
+        echo "The deb package objects do not found:"
+        echo "in the \"${DEBS_OUTPUT_PATH}\" directory"
+        return 1
+    fi
+
+    ## Check if previously exist a dir for the kernel version
+    if [[ -d "${BACKUP_PATH}" ]]; then
+        echo "A previous dir for the same version was found!"
+        echo "Renaming it with a date suffix..."
+        mv -v ${BACKUP_PATH} ${BACKUP_PATH}_OLD_$(date +"%Y%m%d-%H%M%S")
+    ## Check if previously exist a tar backup for the kernel version
+    fi
+    if [[ -f "${BACKUP_PATH}.tar.gz" ]]; then
+        mv -v ${BACKUP_PATH}.tar.gz ${BACKUP_PATH}_OLD_$(date +"%Y%m%d-%H%M%S").tar.gz
+    fi
+
+    ## Prepare the backup dir
+    mkdir -v ${BACKUP_PATH}/debs -p
+    mv ${DEBS_OUTPUT_PATH}/linux*.* ${BACKUP_PATH}/debs
+    ## Extract the deb containing boot images
+    dpkg -x ${BACKUP_PATH}/debs/linux-bootimage-${KERNEL_BASE_VERSION}*.deb ${BACKUP_PATH}
+    mv -v ${BACKUP_PATH}/boot/* ${BACKUP_PATH}/
+    rm -rv /buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}/lib
+    rm -rv /buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}/usr
+    rmdir -v /buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}/boot
+
+    ## Add suffix droidian_version.img to the images
+    for file in $(ls ${BACKUP_PATH} | grep ".img"); do
+        mv -v ${BACKUP_PATH}/${file} ${BACKUP_PATH}/${file}-${KBUILD_DROIDIAN_VERSION_FULL}.img
+    done
+
+    ## Copy the kernel config file
+    cp -v ${BUILD_OUTPUT_PATH}/KERNEL_OBJ/.config ${BACKUP_PATH}/${KERNEL_OBJECTS_2_BACKUP_NAME}.config
+
+    chmod -v 755 ${BACKUP_PATH} -R
+    ## Create the tar backup
+    tar zcvf \
+        /buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}.tar.gz \
+        -C  /buildd/${KBUILD_DROIDIAN_VERSION_BASE} \
+        ${KERNEL_OBJECTS_2_BACKUP_NAME}
+
+    echo; echo "Object's backup finished:"
+    echo "/buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}.tar.gz"
+}
+
 fn_patch_file_arr_line_num_reference() {
     is_patched=$(grep "${arr_lines_to_add[0]}" "${path}/${file}")
     [ -n "${is_patched}" ] && echo "skipping" && return
@@ -681,6 +735,7 @@ if [ "$1" == "releng-kernel" ]; then
 #    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk
     #
     fn_build_kernel_droidian_releng
+    fn_backup_compiled_objects
     #
 elif [ "$1" == "clang" ]; then
     kernel_dir_checks
