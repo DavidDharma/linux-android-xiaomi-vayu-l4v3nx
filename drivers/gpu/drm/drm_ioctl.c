@@ -508,29 +508,39 @@ int drm_version(struct drm_device *dev, void *data,
 int drm_ioctl_permit(u32 flags, struct drm_file *file_priv)
 {
 	/* ROOT_ONLY is only for CAP_SYS_ADMIN */
-	if (unlikely((flags & DRM_ROOT_ONLY) && !capable(CAP_SYS_ADMIN)))
+	if (unlikely((flags & DRM_ROOT_ONLY) && !capable(CAP_SYS_ADMIN))) {
+		pr_info("[DROIDIAN_DEBUG] drm_ioctl_permit: DENIED - ROOT_ONLY check failed\n");
 		return -EACCES;
+	}
 
 	/* AUTH is only for authenticated or render client */
 	if (unlikely((flags & DRM_AUTH) && !drm_is_render_client(file_priv) &&
-		     !file_priv->authenticated))
+		     !file_priv->authenticated)) {
+		pr_info("[DROIDIAN_DEBUG] drm_ioctl_permit: DENIED - AUTH check failed\n");
 		return -EACCES;
+	}
 
 	/* MASTER is only for master or control clients */
 	if (unlikely((flags & DRM_MASTER) && 
 		     !drm_is_current_master(file_priv) &&
-		     !drm_is_control_client(file_priv)))
+		     !drm_is_control_client(file_priv))) {
+		pr_info("[DROIDIAN_DEBUG] drm_ioctl_permit: DENIED - MASTER check failed\n");
 		return -EACCES;
+	}
 
 	/* Control clients must be explicitly allowed */
 	if (unlikely(!(flags & DRM_CONTROL_ALLOW) &&
-		     drm_is_control_client(file_priv)))
+		     drm_is_control_client(file_priv))) {
+		pr_info("[DROIDIAN_DEBUG] drm_ioctl_permit: DENIED - CONTROL_ALLOW check failed\n");
 		return -EACCES;
+	}
 
 	/* Render clients must be explicitly allowed */
 	if (unlikely(!(flags & DRM_RENDER_ALLOW) &&
-		     drm_is_render_client(file_priv)))
+		     drm_is_render_client(file_priv))) {
+		pr_info("[DROIDIAN_DEBUG] drm_ioctl_permit: DENIED - RENDER_ALLOW check failed\n");
 		return -EACCES;
+	}
 
 	return 0;
 }
