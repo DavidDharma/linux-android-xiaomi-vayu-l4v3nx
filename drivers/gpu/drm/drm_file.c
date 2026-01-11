@@ -379,6 +379,10 @@ static int drm_open_helper(struct file *filp, struct drm_minor *minor)
 	if (IS_ERR(priv))
 		return PTR_ERR(priv);
 
+	/* Auto-authenticate for Droidian/Halium - single DRM client */
+	priv->authenticated = 1;
+	pr_info("[DROIDIAN_DEBUG] drm_open_helper: auto-authenticated DRM client\n");
+
 	if (drm_is_primary_client(priv)) {
 		ret = drm_master_open(priv);
 		if (ret) {

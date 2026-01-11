@@ -2222,9 +2222,13 @@ int drm_mode_atomic_ioctl(struct drm_device *dev,
 	int ret = 0;
 	unsigned int i, j, num_fences;
 
+	pr_info("[DROIDIAN_DEBUG] drm_mode_atomic_ioctl: entered, flags=0x%x\n", arg->flags);
+
 	/* disallow for drivers not supporting atomic: */
-	if (!drm_core_check_feature(dev, DRIVER_ATOMIC))
+	if (!drm_core_check_feature(dev, DRIVER_ATOMIC)) {
+		pr_info("[DROIDIAN_DEBUG] drm_mode_atomic_ioctl: DRIVER_ATOMIC not supported, returning -EINVAL\n");
 		return -EINVAL;
+	}
 
 	/* disallow for userspace that has not enabled atomic cap (even
 	 * though this may be a bit overkill, since legacy userspace
@@ -2372,6 +2376,9 @@ out:
 
 	drm_modeset_drop_locks(&ctx);
 	drm_modeset_acquire_fini(&ctx);
+
+	if (ret != 0)
+		pr_info("[DROIDIAN_DEBUG] drm_mode_atomic_ioctl: returning ret=%d\n", ret);
 
 	return ret;
 }
