@@ -1,0 +1,762 @@
+#!/bin/bash
+
+## Helper scripts for Droidian kernel compilation
+#
+# Version: 0.0.12
+#
+# Upstream-Name: droidian-kernel-build-helper-scripts
+# Source: https://github.com/berbascum/bdroidian-kernel-build-helper-scripts
+#
+# Copyright (C) 2024 Berbascum <berbascum@ticv.cat>
+# All rights reserved.
+#
+# BSD 3-Clause License
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#    * Redistributions of source code must retain the above copyright
+#      notice, this list of conditions and the following disclaimer.
+#    * Redistributions in binary form must reproduce the above copyright
+#      notice, this list of conditions and the following disclaimer in the
+#      documentation and/or other materials provided with the distribution.
+#    * Neither the name of the <organization> nor the
+#      names of its contributors may be used to endorse or promote products
+#      derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+# DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+# ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+abort() {
+    echo; echo "$*"; exit 1
+}
+
+START_DIR="/buildd/sources"
+
+kernel_dir_checks() {
+   KERNEL_DIR="$(pwd)"
+   ## Check for /buildd/sources dir
+   [ -d "${START_DIR}" ] || abort "The expected ${START_DIR} dir does not exist!"
+   ## Check for a kernel tree root
+   [ -f "${KERNEL_DIR}/Kconfig" ] || abort "Not in a kernel source dir!"
+}
+
+TOOLCHAINS_PATH_BASE="/opt"
+## The arch var is used by clang-manual, but not by releng
+export ARCH=arm64
+HOST_ARCH="$(uname -m)"
+
+fn_enable_ccache() {
+    ## Use ccache tu speedup the build
+    export USE_CCACHE=1
+    export CCACHE_EXEC=/usr/bin/ccache
+    ccache -M 10G
+    ccache -o compression=false
+    ccache -s
+    exit
+}
+
+fn_install_prereqs_kernel_build() {
+apt-get update
+apt-get install linux-packaging-snippets bc bison build-essential ccache curl flex git git-lfs gnupg gperf imagemagick libelf-dev libncurses5-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3 python-is-python3
+# libsdl1.2-dev
+}
+
+fn_install_prereqs_droidian_tools() {
+    ## Update apt
+    apt-get update
+    ## For Debian bullseye clang-11 arm64
+    # apt-get install apt-config-berbascum-bullseye-debian
+    # apt-get install apt-config-berbascum-bookworm-debian
+    ## Add droidian component apt config
+    apt-get install apt-config-berbascum-trixie-droidian
+    ## Add droidian-kernel-build component apt config
+    apt-get install apt-config-berbascum-trixie-droidian-build-kernel
+    ## Update apt
+#    apt-get update
+#    apt-get install droidian-apt-config droidian-archive-keyring apt-transport-droidian
+    ## Set Droidian to next
+#    echo "Acquire::Droidian::Version "next";" > /etc/apt/apt.conf.d/90-droidian-snapshot
+    ## Update apt
+    apt-get update
+    ## Install Droidian build tools
+    apt-get update && apt-get install -y --no-install-recommends linux-packaging-snippets releng-tools
+    ## releng-tools: craches on arm64 docker host
+}
+
+fn_check_cpio_version() {
+    version_detected="$(apt-cache policy cpio | awk -F ':' '/Candidat/ {print $2}' | awk -F'+' '{print $1}' | sed 's/[[:space:]]//g')"
+    version_unwanted="2.13"
+    [[ "${version_unwanted}" == "${version_detected}" ]] && error "Not use cpio v${version_unwanted}!"
+}
+
+fn_check_mkbootimg_version() {
+    version_detected="$(apt-cache policy mkbootimg | awk -F ':' '/Candidat/ {print $2 ":" $3}' | awk -F'+' '{print $1}' | sed 's/[[:space:]]//g')"
+    version_wanted="2:20.0-3"
+    [[ "${version_wanted}" == "${version_detected}" ]] || error "Use mkbootimg v${version_wanted} from Droidian!"
+}
+
+fn_install_prereqs_droidian_kernel_info() {
+    apt-get install binutils-aarch64-linux-gnu clang-android-${CLANG_VERSION} gcc-4.9-aarch64-linux-android g++-4.9-aarch64-linux-android libgcc-4.9-dev-aarch64-linux-android-cross
+}
+
+fn_install_clang_custom() {
+    if [ "${CLANG_CUSTOM}" == "1" ] && [ "${DOWNLOAD_CLANG_CUSTOM}" == "1" ]; then
+        echo "DOWNLOAD_CLANG_CUSTOM = 1, will download!"
+    else
+        echo "DOWNLOAD_CLANG_CUSTOM not 1, skipping!"
+        return
+    fi
+
+    echo "Start clang custom download"
+    ## Set the default repository for each host arch
+    if [ "${HOST_ARCH}" == "aarch64" ]; then
+    CLANG_CUSTOM_URL_SUFFIX="${CLANG_CUSTOM_FILE_ARM64}"
+    CLANG_CUSTOM_URL="${CLANG_CUSTOM_URL_ARM64}"
+    CLANG_CUSTOM_BRANCH="${CLANG_CUSTOM_BRANCH_ARM64}"
+    elif [ "${HOST_ARCH}" == "x86_64" ]; then
+        # CLANG_CUSTOM_URL git repo url .git suffix
+        # Branch: should be specified a branch to clone
+
+        CLANG_CUSTOM_URL_SUFFIX="${CLANG_CUSTOM_FILE_AMD64}"
+        CLANG_CUSTOM_URL="${CLANG_CUSTOM_URL_AMD64}"
+        CLANG_CUSTOM_BRANCH="${CLANG_CUSTOM_BRANCH_AMD64}"
+    fi
+
+    ## Check the url for a supported suffix
+    arr_download_types=( "git" "tar.xz" )
+    for download_type in ${arr_download_types[@]}; do
+        check_url="$(echo ${CLANG_CUSTOM_URL} | grep -c "${download_type}$")"
+        [ "${check_url}" -eq "1" ] && break
+    done
+    [ "${check_url}" == "0" ] && abort "Download type \"${download_type}\" not supported"
+
+##### Download packaged file from url
+    if [ "${download_type}" == "tar.xz" ]; then
+        echo "tar.xz type"
+        if [ -f "${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX}" ]; then
+            echo "File ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX} already exists!"
+        else
+            echo "Downloading ${CLANG_CUSTOM_URL_SUFFIX} to /opt..."
+            wget -O ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX} "${CLANG_CUSTOM_URL}"
+        fi
+        if [ -d "${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}" ]; then
+            echo "Dir ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}} already exists!"
+        else
+            echo "Extracting ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX} to ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}..."
+            tar xf ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX} -C ${TOOLCHAINS_PATH_BASE}
+        fi
+        BUILD_PATH_CLANG_CUSTOM="${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_URL_SUFFIX%.${download_type}}/bin"
+        echo "BUILD_PATH_CLANG_CUSTOM = ${BUILD_PATH_CLANG_CUSTOM}"
+
+##### TODO NEEDS REFACT Download git branch as zip
+    elif [ "${download_type}" == "git" ]; then
+        echo "git type"
+	    clang_url_cleaned=$(echo ${CLANG_CUSTOM_URL} | sed "s|.${download_type}$||g")
+        clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
+	    ## The zip natively contains a dir named:
+	       ## <repo>-<branch>
+	    clang_dir_in_zip_name="${clang_dir_name}-${CLANG_CUSTOM_BRANCH}"
+	    ## Download the toolchain
+	    if [ -f "${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_BRANCH}.zip" ]; then
+            echo "File ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_BRANCH}.zip already exist!"
+        else
+            echo "Downloading file ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_BRANCH}.zip..."
+            wget ${clang_url_cleaned}/archive/refs/heads/${CLANG_CUSTOM_BRANCH}.zip -O ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_BRANCH}.zip || abort "Download failed"
+	    fi
+	    ## Extract the toolchain
+	    if [ ! -d "${TOOLCHAINS_PATH_BASE}/${clang_dir_in_zip_name}" ]; then
+            unzip -q ${TOOLCHAINS_PATH_BASE}/${CLANG_CUSTOM_BRANCH}.zip -d ${TOOLCHAINS_PATH_BASE} || abort "Unpack failed"
+	    fi
+        arr_bins_found=()
+        for bin_found in $(find ${TOOLCHAINS_PATH_BASE}/${clang_dir_in_zip_name} -wholename '*bin/clang-*'); do
+            bin_path="$(dirname "${bin_found}")"
+            found_in_arr="$(echo ${arr_bins_found[*]} | grep -c "${bin_path}")"
+                echo "found_in_arr: $found_in_arr"
+            if [ "${found_in_arr}" -eq "0" ] ; then
+                arr_bins_found+=( "${bin_path}" )
+            fi
+        done
+        if [ "${#arr_bins_found[@]}" -eq "0" ]; then
+            abort "No dirs found matching bin/clang"
+        elif [ "${#arr_bins_found[@]}" -eq "1" ]; then
+            BUILD_PATH_CLANG_CUSTOM="${arr_bins_found[0]}"
+        elif [ "${#arr_bins_found[@]}" -gt "1" ]; then
+            abort "Found \"${#arr_bins_found[@]}\" dirs matching bin/clang"
+        fi
+        echo "BUILD_PATH_CLANG_CUSTOM = ${BUILD_PATH_CLANG_CUSTOM}"
+    fi
+    ## Update the BUILD_PATH in kernel-info.mk
+    echo "Updating the BUILD_PATH in kernel-info.mk..."
+    var_exist=$(grep "^BUILD_PATH_CLANG_CUSTOM" ${KERNEL_DIR}/debian/kernel-info.mk)
+    [ -n "${var_exist}" ] || sed -i '/^CLANG_CUSTOM = /a\BUILD_PATH_CLANG_CUSTOM = ' ${KERNEL_DIR}/debian/kernel-info.mk
+    sed -i "s|^BUILD_PATH_CLANG_CUSTOM = .*|BUILD_PATH_CLANG_CUSTOM = ${BUILD_PATH_CLANG_CUSTOM}|g" ${KERNEL_DIR}/debian/kernel-info.mk
+
+##### TODO: Cloning a git repo alternate method
+        #TOOLCHAINS_PATH_BASE="/opt"
+        #clang_dir_name="$(basename ${CLANG_CUSTOM_URL} | awk -F".${download_type}" '{print $1}')"
+
+#        git clone ${CLANG_CUSTOM_URL} ${TOOLCHAINS_PATH_BASE}/${clang_dir_name}
+#
+# wget https://github.com/android-berb/platform.prebuilts.clang.host.linux-x86/archive/refs/heads/android-gs-felix-5.10-android14-qpr3.zip -O branch.zip
+<< "DISABLED_TAR_SAMPLE"
+    if [ ! -d "/usr/lib/llvm-android-${CLANG_VERSION}/bin" ]; then
+        cd /usr/lib
+        wget https://github.com/droidian-berb/android-platform-prebuilts-clang-host-linux-x86/raw/main/llvm-clang-${CLANG_VERSION}-droidian-x86_aarch64.tar.gz
+        echo "Extracting clang..."
+        tar zxf llvm-clang-${CLANG_VERSION}-droidian-x86_aarch64.tar.gz
+    fi
+DISABLED_TAR_SAMPLE
+}
+
+fn_install_lineage_toolchains() {
+    cd ${TOOLCHAINS_PATH_BASE}
+    # gcc
+    git clone -b lineage-18.1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9.git
+    #
+    # clang
+#    git clone https://github.com/LineageOS/android_prebuilts_clang_kernel_linux-x86_clang-r416183b.git
+    #
+    # build-tools
+    los_ver="lineage-18.1"
+    los_branch="android-11.0.0_r0.100"
+    # los_branch="android-13.0.0_r0.117"
+    # los_ver="lineage-20.1"
+    git clone -b ${los_branch} \
+    https://android.googlesource.com/kernel/prebuilts/build-tools
+    git clone -b ${los_branch} https://github.com/LineageOS/android_prebuilts_tools-lineage.git
+}
+
+######################################
+## Clang manual lineage build tools ##
+######################################
+fn_clang_manual_droidian_gcc_vars() {
+    ## TODO: review if still needed
+    CLANG_PATH="/usr/lib/llvm-android-${CLANG_VERSION}/bin"
+    export PATH="${CLANG_PATH}:$PATH"
+}
+fn_clang_manual_lineage_gcc_vars() {
+    ## TODO: review if still needed
+    #CLANG_PATH="$TOOLCHAINS_PATH_BASE/android_prebuilts_clang_kernel_linux-x86_clang-r416183b/bin"
+    export PATH=$PATH:$TOOLCHAINS_PATH_BASE/build-tools/linux-x86/bin:$TOOLCHAINS_PATH_BASE/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9/aarch64-linux-android/bin:$TOOLCHAINS_PATH_BASE/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9/bin:$TOOLCHAINS_PATH_BASE/android_prebuilts_tools-lineage/linux-x86/bin
+}
+
+fn_get_kernel_version() {
+    arr_kernel_version=()
+    arr_kernel_version_str=( '^VERSION' '^PATCHLEVEL' '^SUBLEVEL' )
+    for version_str in ${arr_kernel_version_str[@]}; do
+        arr_kernel_version+=( $(\
+            cat ${KERNEL_DIR}/Makefile \
+            | grep ${version_str} \
+            | head -n 1 \
+            | awk '{print $3}') )
+    done
+    KERNEL_BASE_VERSION="${arr_kernel_version[0]}.${arr_kernel_version[1]}-${arr_kernel_version[2]}"
+    KERNEL_BASE_VERSION_SHORT="${arr_kernel_version[0]}.${arr_kernel_version[1]}"
+    echo "build_droidian_kernel: KERNEL_BASE_VERSION = ${KERNEL_BASE_VERSION}"
+    echo "build_droidian_kernel: KERNEL_VERSION = ${KERNEL_BASE_VERSION_SHORT}"
+
+    ## Get the droidian's kernel version
+    KBUILD_DROIDIAN_VERSION_FULL="$(git tag --sort=-creatordate | head -1 | awk -F'+' '{print $NF}')"
+    KBUILD_DROIDIAN_VERSION_BASE="$(echo "${KBUILD_DROIDIAN_VERSION_FULL}" | awk -F'-' '{print $1}')"
+}
+
+fn_kernel_info_mk_vars_write() {
+    KERNEL_INFO_MK_FILENAME="kernel-info.mk"
+    KERNEL_INFO_MK_FULLPATH_FILE="${KERNEL_DIR}/debian/${KERNEL_INFO_MK_FILENAME}"
+    [ ! -f "${KERNEL_INFO_MK_FULLPATH_FILE}" ] \
+    && abort "build_droidian_kernel: kernel-info.mk not found!"
+    echo "build_droidian_kernel: Setting the kernel version in kernel-info.mk..."
+
+    ## Write kernel version
+    sed -i "s/KERNEL_BASE_VERSION.*/KERNEL_BASE_VERSION\ =\ ${KERNEL_BASE_VERSION}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
+
+    ## Write Droidian's kernel version
+    sed -i "s/^[#]KBUILD_DROIDIAN_VERSION.*/KBUILD_DROIDIAN_VERSION = ${KBUILD_DROIDIAN_VERSION_FULL}/g" ${KERNEL_INFO_MK_FULLPATH_FILE}
+
+    echo "build_droidian_kernel: Kernel version configured on kernel-info.mk"
+}
+
+fn_kernel_info_mk_vars_load() {
+    ## Load vars from kernel-info.mk (make method)
+    ARCH=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(KERNEL_ARCH)")
+    echo "ARCH = ${ARCH}"
+#    ARCH_HOST=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(DEB_BUILD_ON)")
+#    echo "ARCH_HOST = ${ARCH_HOST}"
+    BUILD_PATH=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(BUILD_PATH)")
+    echo "BUILD_PATH = ${BUILD_PATH}"
+    ## CLANG
+    CLANG_VERSION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_VERSION)")
+    echo "CLANG_VERSION = ${CLANG_VERSION}"
+    ## CLANG CUSTOM
+    CLANG_CUSTOM=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM)")
+    echo "CLANG_CUSTOM = ${CLANG_CUSTOM}"
+    DOWNLOAD_CLANG_CUSTOM=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(DOWNLOAD_CLANG_CUSTOM)")
+    echo "DOWNLOAD_CLANG_CUSTOM = ${DOWNLOAD_CLANG_CUSTOM}"
+    # Arch dependent vars
+    CLANG_CUSTOM_URL_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_URL_AMD64)")
+    echo "CLANG_CUSTOM_URL_AMD64 = ${CLANG_CUSTOM_URL_AMD64}"
+    CLANG_CUSTOM_URL_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_URL_ARM64)")
+    echo "CLANG_CUSTOM_URL_ARM64 = ${CLANG_CUSTOM_URL_ARM64}"
+    CLANG_CUSTOM_BRANCH_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_BRANCH_AMD64)")
+    echo "CLANG_CUSTOM_BRANCH_AMD64 = ${CLANG_CUSTOM_BRANCH_AMD64}"
+    CLANG_CUSTOM_BRANCH_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_BRANCH_ARM64)")
+    echo "CLANG_CUSTOM_BRANCH_ARM64 = ${CLANG_CUSTOM_BRANCH_ARM64}"
+
+    CLANG_CUSTOM_VERSION_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_VERSION_AMD64)")
+    echo "CLANG_CUSTOM_VERSION_AMD64 = ${CLANG_CUSTOM_VERSION_AMD64}"
+    CLANG_CUSTOM_VERSION_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_VERSION_ARM64)")
+    echo "CLANG_CUSTOM_VERSION_ARM64 = ${CLANG_CUSTOM_VERSION_ARM64}"
+
+    CLANG_CUSTOM_REVISION_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_REVISION_AMD64)")
+    echo "CLANG_CUSTOM_REVISION_AMD64 = ${CLANG_CUSTOM_REVISION_AMD64}"
+    CLANG_CUSTOM_REVISION_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_REVISION_ARM64)")
+    echo "CLANG_CUSTOM_REVISION_ARM64 = ${CLANG_CUSTOM_REVISION_ARM64}"
+    CLANG_CUSTOM_ANDROID_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_ANDROID_AMD64)")
+    echo "CLANG_CUSTOM_ANDROID_AMD64 = ${CLANG_CUSTOM_ANDROID_AMD64}"
+    CLANG_CUSTOM_ANDROID_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_ANDROID_ARM64)")
+    echo "CLANG_CUSTOM_ANDROID_ARM64 = ${CLANG_CUSTOM_ANDROID_ARM64}"
+    CLANG_CUSTOM_FILE_AMD64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_FILE_AMD64)")
+    echo "CLANG_CUSTOM_FILE_AMD64 = ${CLANG_CUSTOM_FILE_AMD64}"
+    CLANG_CUSTOM_FILE_ARM64=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(CLANG_CUSTOM_FILE_ARM64)")
+    echo "CLANG_CUSTOM_FILE_ARM64 = ${CLANG_CUSTOM_FILE_ARM64}"
+    ## Kernel info
+    KBUILD_DROIDIAN_VERSION=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(KBUILD_DROIDIAN_VERSION)")
+    echo "KBUILD_DROIDIAN_VERSION = ${KBUILD_DROIDIAN_VERSION}"
+    KERNEL_DEVELOPER_NAME=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(KERNEL_DEVELOPER_NAME)")
+    echo "KERNEL_DEVELOPER_NAME = ${KERNEL_DEVELOPER_NAME}"
+    ## Device vars
+    VARIANT=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(VARIANT)")
+    echo "VARIANT = ${VARIANT}"
+    DEVICE_MODEL=$(make --no-print-directory -f "${KERNEL_DIR}/debian/kernel-info.mk" -s --eval="all:;@echo \$(DEVICE_MODEL)")
+    echo "DEVICE_MODEL = ${DEVICE_MODEL}"
+}
+
+fn_clang_manual_vars() {
+    ## Clang version vars
+    # CLANG_VERSION="6.0-4691093"
+    # CLANG_VERSION="9.0-r353983c"
+    CLANG_VERSION="10.0-r370808"
+    # CLANG_VERSION="11.0-r383902" 
+    # CLANG_VERSION="12.0-r416183b"
+    # CLANG_VERSION="14.0-r450784d"
+    # CLANG_VERSION="17.0-r487747"
+    ## defconfig files vars
+    DEFCONFIG_SOC="vendor/sm8150_defconfig"
+    DEFCONFIG_MODEL="vayu_user_defconfig"
+    DEFCONFIG_MAIN="vayu_main_defconfig"
+    KERNEL_RELEASE="4.14-290-xiaomi-vayu"
+    CROSS_TYPE="android" # | gnu
+    # COMPILER="aarch64-linux-android-gcc-4.9"
+    COMPILER=clang
+    # CLANG_PATH="${CLANG_PATH}"
+    # CLANG=$CLANG_PATH/clang
+    #export PATH=${CLANG_PATH}:$PATH
+    #export AS=aarch64-linux-${CROSS_TYPE}-as
+    #export LD=aarch64-linux-${CROSS_TYPE}-ld
+    #export AR=aarch64-linux-${CROSS_TYPE}-ar
+    #export NM=aarch64-linux-${CROSS_TYPE}-nm
+    # export OBJCOPY=aarch64-linux-${CROSS_TYPE}-objcopy
+    # export OBJDUMP=aarch64-linux-${CROSS_TYPE}-objdump
+    # export STRIP=aarch64-linux-${CROSS_TYPE}-strip
+    export CROSS_COMPILE=aarch64-linux-${CROSS_TYPE}-
+    export CROSS_COMPILE_ARM32=aarch64-linux-${CROSS_TYPE}-
+    export CLANG_TRIPLE=aarch64-linux-gnu-
+
+}
+
+
+########################################
+## Clang manual compilation functions ##
+########################################
+fn_mrproper() {
+    make -C /buildd/sources ARCH=${ARCH} \
+	O=/buildd/sources/out/KERNEL_OBJ \
+	CC=$COMPILER \
+	mrproper
+}
+
+fn_gen_main_defconfig() {
+    ## Load soc_defconfig as base
+    fn_set_defconfig "${DEFCONFIG_SOC}"
+    echo "" && echo "soc_defconfig loaded" && echo ""
+    ## Merge model_defconfig into .config
+    /buildd/sources/scripts/kconfig/merge_config.sh \
+	-O /buildd/sources/out/KERNEL_OBJ \
+	-m /buildd/sources/out/KERNEL_OBJ/.config \
+	 /buildd/sources/arch/${ARCH}/configs/"${DEFCONFIG_MODEL}"
+    echo "" && echo "device_defconfig merged" && echo ""
+    ## regenerate .config
+    fn_olddefconfig
+    echo "" &&  echo ".config regenerated" && echo ""
+    ## copy .config to arch configs base dir
+    cp -v  out/KERNEL_OBJ/.config \
+        /buildd/sources/arch/${ARCH}/configs/${DEFCONFIG_MAIN}
+}
+
+fn_set_defconfig() {
+    [ -z "${DEFCONFIG_MAIN}" ] && DEFCONFIG_MAIN=$1
+    make -C /buildd/sources ARCH=${ARCH} \
+	O=/buildd/sources/out/KERNEL_OBJ \
+	CC=$COMPILER \
+        ${DEFCONFIG_MAIN}
+}
+
+fn_merge_fragments() {
+    /buildd/sources/scripts/kconfig/merge_config.sh \
+	-O /buildd/sources/out/KERNEL_OBJ \
+	-m /buildd/sources/out/KERNEL_OBJ/.config \
+	/buildd/sources/droidian/vayu.config \
+	/buildd/sources/droidian/common_fragments/droidian.config \
+	/buildd/sources/droidian/common_fragments/halium.config
+}
+
+fn_menuconfig() {
+    make -C /buildd/sources ARCH=${ARCH} \
+	O=/buildd/sources/out/KERNEL_OBJ \
+	CC=$COMPILER \
+	KCONFIG_CONFIG=/buildd/sources/out/KERNEL_OBJ/.config menuconfig
+}
+
+fn_kconfig() {
+    make -C /buildd/sources ARCH=${ARCH} \
+	O=/buildd/sources/out/KERNEL_OBJ \
+	CC=$COMPILER \
+	KCONFIG_CONFIG=/buildd/sources/out/KERNEL_OBJ/.config kconfig
+}
+
+fn_listconfig() {
+    make -C /buildd/sources ARCH=${ARCH} \
+	O=/buildd/sources/out/KERNEL_OBJ \
+	CC=$COMPILER \
+	KCONFIG_CONFIG=/buildd/sources/out/KERNEL_OBJ/.config \
+	./scripts/config --list-config | grep CGROUP_PIDS
+}
+
+fn_olddefconfig() {
+    make -C /buildd/sources ARCH=${ARCH} \
+	O=/buildd/sources/out/KERNEL_OBJ \
+	CC=$COMPILER \
+	KCONFIG_CONFIG=/buildd/sources/out/KERNEL_OBJ/.config olddefconfig
+}
+
+fn_savedefconfig() {
+    cp /buildd/sources/out/KERNEL_OBJ/.config.old \
+       /buildd/sources/out/KERNEL_OBJ/.config
+    make -C /buildd/sources ARCH=${ARCH} \
+	O=/buildd/sources/out/KERNEL_OBJ \
+	CC=$COMPILER \
+	KCONFIG_CONFIG=/buildd/sources/out/KERNEL_OBJ/.config savedefconfig
+}
+
+fn_build_kernel_clang_manual() {
+    make -C /buildd/sources ARCH=${ARCH} \
+     KERNELRELEASE=${KERNEL_RELEASE} \
+     LLVM=1 LLVM_IAS=1 \
+     -j8 \
+     O=/buildd/sources/out/KERNEL_OBJ \
+     CC=$COMPILER
+     # CXX=clang++ \
+}
+
+###########################################
+## Droidian releng compilation functions ##
+###########################################
+fn_invert_PATH_kernel_snippet() {
+    ## NOT USED
+    ## Patch releng kernel-snippet.mk
+    ## To use the lineage toolchain, the FULL_PATH var needs to be defined with the PATH var at the beguin
+    sed -i 's|FULL_PATH = $(BUILD_PATH):$(CURDIR)/debian/path-override:${PATH}|FULL_PATH = ${PATH}:$(BUILD_PATH):$(CURDIR)/debian/path-override|g' /usr/share/linux-packaging-snippets/kernel-snippet.mk
+}
+
+fn_build_kernel_droidian_releng() {
+    ## Reconf PATH in kernel snippet (if using custom gcc)
+    ## Pre compile configs
+
+    ## Remove python x86 from control for a arm64 host
+#    if [ "${ARCH_HOST}" == "arm64" ]; then
+#        sed -i '/android-platform-prebuilts-python-linux-x86-2.7.5,/d' /usr/share/linux-packaging-snippets/control.in
+#    fi
+    ## Droidian official configs
+    chmod +x /buildd/sources/debian/rules
+    cd /buildd/sources
+    rm -f debian/control
+    debian/rules debian/control
+
+    ## Call releng
+    RELENG_HOST_ARCH=${ARCH} releng-build-package
+
+    echo; echo "Compilation with droidian-releng finished!"
+}
+
+fn_backup_compiled_objects() {
+    ## Define path vars
+    DEBS_OUTPUT_PATH="/buildd"
+    BUILD_OUTPUT_PATH="${KERNEL_DIR}/out"
+    KERNEL_OBJECTS_2_BACKUP_NAME="kernel-droidian-${DEVICE_MODEL}-${KERNEL_BASE_VERSION}-${KERNEL_DEVELOPER_NAME}-${KBUILD_DROIDIAN_VERSION_FULL}"
+    BACKUP_PATH="/buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}"
+
+    ## Check that the .deb objects are found
+    if ! ls ${DEBS_OUTPUT_PATH}/linux* 2>/dev/null; then
+        echo "The deb package objects do not found:"
+        echo "in the \"${DEBS_OUTPUT_PATH}\" directory"
+        return 1
+    fi
+
+    ## Check if previously exist a dir for the kernel version
+    if [[ -d "${BACKUP_PATH}" ]]; then
+        echo "A previous dir for the same version was found!"
+        echo "Renaming it with a date suffix..."
+        mv -v ${BACKUP_PATH} ${BACKUP_PATH}_OLD_$(date +"%Y%m%d-%H%M%S")
+    ## Check if previously exist a tar backup for the kernel version
+    fi
+    if [[ -f "${BACKUP_PATH}.tar.gz" ]]; then
+        mv -v ${BACKUP_PATH}.tar.gz ${BACKUP_PATH}_OLD_$(date +"%Y%m%d-%H%M%S").tar.gz
+    fi
+
+    ## Prepare the backup dir
+    mkdir -v ${BACKUP_PATH}/debs -p
+    mv ${DEBS_OUTPUT_PATH}/linux*.* ${BACKUP_PATH}/debs
+    ## Extract the deb containing boot images
+    dpkg -x ${BACKUP_PATH}/debs/linux-bootimage-${KERNEL_BASE_VERSION}*.deb ${BACKUP_PATH}
+    mv -v ${BACKUP_PATH}/boot/* ${BACKUP_PATH}/
+    rm -rv /buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}/lib
+    rm -rv /buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}/usr
+    rmdir -v /buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}/boot
+
+    ## Add suffix droidian_version.img to the images
+    for file in $(ls ${BACKUP_PATH} | grep ".img"); do
+        mv -v ${BACKUP_PATH}/${file} ${BACKUP_PATH}/${file}-${KBUILD_DROIDIAN_VERSION_FULL}.img
+    done
+
+    ## Copy the kernel config file
+    cp -v ${BUILD_OUTPUT_PATH}/KERNEL_OBJ/.config ${BACKUP_PATH}/${KERNEL_OBJECTS_2_BACKUP_NAME}.config
+
+    chmod -v 755 ${BACKUP_PATH} -R
+    ## Create the tar backup
+    tar zcvf \
+        /buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}.tar.gz \
+        -C  /buildd/${KBUILD_DROIDIAN_VERSION_BASE} \
+        ${KERNEL_OBJECTS_2_BACKUP_NAME}
+
+    echo; echo "Object's backup finished:"
+    echo "/buildd/${KBUILD_DROIDIAN_VERSION_BASE}/${KERNEL_OBJECTS_2_BACKUP_NAME}.tar.gz"
+}
+
+fn_patch_file_arr_line_num_reference() {
+    is_patched=$(grep "${arr_lines_to_add[0]}" "${path}/${file}")
+    [ -n "${is_patched}" ] && echo "skipping" && return
+
+    num_line_reference=$(grep -n "${patch_line_reference}" ${path}/${file} | awk -F':' '{print $1}')
+    num_line_start=$((num_line_reference + start_relative))
+    for line in "${arr_lines_to_add[@]}"; do
+        sed -i "${num_line_start}a ${line}" "${path}/${file}"
+        num_line_start=$((num_line_start + 1))
+    done
+    ## Add a blank line after last line
+    sed -i "${num_line_start}a\
+
+    " "${path}/${file}"
+}
+
+fn_releng_tools_cherry_berb_mods() {
+    ## Patch releng-tools with some berbascum mods on development
+    ## Git config
+    git config --global user.email "build@local.lan"
+    git config --global user.name "build"
+    ## First clone the upstream
+    rm -rf /tmp/releng-tools
+    cd /tmp
+    git clone -b droidian https://github.com/droidian-releng/releng-tools
+    cd releng-tools
+    git remote add origin-berb https://github.com/berbascum/releng-tools
+    git fetch origin-berb
+    ## Cherry-pick "debug messages extra":
+       ## Branch: feature/berb-debug
+       ## Commit: [releng-tools] debug: Add some messages to show info about branches/tags
+    commit_2_cherry="9c713bbfb172c519a4ec555eda0db63b8ca3e02a"
+    git cherry-pick ${commit_2_cherry}
+    if [ "$?" -eq "0" ]; then
+        echo "Cherry-pick OK"
+    else
+        abort "Cherry-pick FAILED"
+    fi
+    ## Cherry-pick "clang custom support"
+       ## Branch: feature/clang-custom
+       ## Commit: [releng-tools] build-package: add BUILD_PATH_CLANG_CUSTOM as debuild envvar
+    commit_2_cherry="02f0676775c26194b372f611c9332f572d7306fd"
+    git cherry-pick ${commit_2_cherry}
+    if [ "$?" -eq "0" ]; then
+        echo "Cherry-pick OK"
+    else
+        abort "Cherry-pick FAILED"
+    fi
+
+    ## Update the system releng scripts
+    cat build_package.sh > /usr/lib/releng-tools/build_package.sh
+    cat build_changelog.py > /usr/lib/releng-tools/build_changelog.py
+    ## Nightly patching
+    echo "Adding --allow-downgrades to the depends resolver"...
+    sed -i 's/apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes/apt-get -o Debug::pkgProblemResolver=yes --no-install-recommends --yes --allow-downgrades/g' /usr/lib/releng-tools/build_package.sh
+    grep 'pkgProblemResolver=yes' /usr/lib/releng-tools/build_package.sh
+}
+
+fn_packaging_snippets_upgrade_conf() {
+    snippets_path="/usr/share/linux-packaging-snippets"
+}
+
+fn_get_snippet() {
+    wget -O ${snippets_path}/${snippet_file} ${snippet_url}/${snippet_file}
+    [ -f "${KERNEL_DIR}/debian/${snippet_file}" ] \
+        && cp -av ${KERNEL_DIR}/debian/${snippet_file} ${snippets_path}
+}
+
+fn_packaging_snippets_update_from_upstream() {
+    [ -d "/tmp/linux-packaging-snippets" ] && rm -rf /tmp/linux-packaging-snippets
+    git clone https://github.com/droidian/linux-packaging-snippets /tmp/linux-packaging-snippets
+    cp -av /tmp/linux-packaging-snippets/ /usr/share/
+}
+
+fn_kernel_snippet_main_wget() {
+    ## Get unofficial-berb kernel snippets mods
+    snippet_url="https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced"
+    snippet_file="kernel-snippet.mk"
+    fn_get_snippet
+}
+
+fn_kernel_snippets_clang() {
+    ## Get clang kernel-snippets from berb-git
+    snippet_url="https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/clang-conf-advanced"
+    snippet_file="kernel-snippet-clang-conf-advanced.mk"
+    fn_get_snippet
+    snippet_file="kernel-snippet-clang-clean-deb-toolchain.mk"
+    fn_get_snippet
+    snippet_file="kernel-snippet-clang-versions.mk"
+    fn_get_snippet
+
+    unset snippet_file
+}
+
+fn_kernel_snippets_extra_frag_extended_wget() {
+    snippet_url="https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/extra-frags-extended"
+    snippet_file="kernel-snippet-extra-fragments-extended.mk"
+    wget -O ${snippets_path}/${snippet_file} ${snippet_url}/${snippet_file}
+    file="kernel-snippet.mk"
+    path="/usr/share/linux-packaging-snippets"
+    patch_line_reference="ifdef KERNEL_CONFIG_EXTRA_FRAGMENTS"
+    add_line1="include /usr/share/linux-packaging-snippets/kernel-snippet-extra-fragments-extended.mk"
+    ## Add lines 2 lines (n;n;) after match
+    ## Adding more lines
+    #    a ${add_line1}
+    #    a ${add_line2}
+    is_patched=$(grep "${add_line1}" ${path}/${file})
+    [ -n "${is_patched}" ] && return
+
+    sed -i "/^${patch_line_reference}$/{
+        n;n;
+        a ""
+        a ${add_line1}
+    }" "${path}/${file}"
+}
+
+fn_kernel_snippet_kernel_release_info_extended_wget() {
+    ## Add the previous kernel developer at the KERNEL_RELEASE's end
+#    sed -i "s/^KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)/KERNEL_RELEASE = \$(KERNEL_BASE_VERSION)-\$(VARIANT)-\$(KERNEL_DEVELOPER_NAME)-\$(DEVICE_VENDOR)-\$(DEVICE_MODEL)-\$(KBUILD_DROIDIAN_VERSION)/g" /usr/share/linux-packaging-snippets/kernel-snippet.mk
+    ## Get the control override snippet
+    snippet_url="https://raw.githubusercontent.com/berbascum/linux-packaging-snippets/refs/heads/feature/kernel-release-extended"
+    snippet_file="control-override-kernel-release-extended.mk"
+    fn_get_snippet
+
+    ## Patch kernel-snippet to include a control
+    ## override snippet for custom kernel name
+    ## start relative: "-" before, "+" after
+    start_relative="-1"
+    patch_line_reference='debian.*control:'
+    file="kernel-snippet.mk"
+    path="/usr/share/linux-packaging-snippets"
+    arr_lines_to_add=(
+        '# control override for enabling kernel developer name in kernel name'
+        'ifdef KERNEL_DEVELOPER_NAME'
+        'include /usr/share/linux-packaging-snippets/kernel-snippet-control-override-developer-name.mk'
+        'endif'
+    )
+    ## Disable patching kernel-snippet, the snippet
+    ## is included in debian/rules instead
+    #fn_patch_file_arr_line_num_reference
+}
+
+#fn_enable_ccache
+
+## Custom lineage build tools
+# fn_install_lineage_toolchains
+   ## Need to define paths in kernel-info.mk
+
+if [ "$1" == "releng-kernel" ]; then
+    kernel_dir_checks
+#   fn_install_prereqs_kernel_build
+       ## DONE in the docker image
+    ## Install/Upgrade Droidian build tools
+    fn_install_prereqs_droidian_tools
+    fn_check_cpio_version
+    fn_check_mkbootimg_version
+#   fn_install_prereqs_droidian_kernel_info
+
+    ## kernel-info.mk vars
+    fn_get_kernel_version
+    ## Write var values in the kernel-info.mk
+    fn_kernel_info_mk_vars_write
+    ## Load vars from the kernel-info.mk
+    fn_kernel_info_mk_vars_load
+
+    ## Install clang custom if enabled in kernel-info.mk
+    fn_install_clang_custom
+    ## Update linux-packaging-snippets from upstream
+    fn_packaging_snippets_update_from_upstream
+    ## Update releng to last unofficial testing
+    fn_releng_tools_cherry_berb_mods
+    ## Download testing versions of packaging snippets
+    fn_packaging_snippets_upgrade_conf
+    # Get kernel-snippet main from berb-git
+    fn_kernel_snippet_main_wget
+    ## Get clang kernel-snippets from berb-git
+    fn_kernel_snippets_clang
+    # Get kernel-snippet extra fragments extended
+    fn_kernel_snippets_extra_frag_extended_wget
+    # Get kernel-snippet kernel release info extended
+    fn_kernel_snippet_kernel_release_info_extended_wget
+    #
+#    sed -i 's/CROSS_COMPILE_ARM32/CROSS_COMPILE_COMPAT/g' /usr/share/linux-packaging-snippets/kernel-snippet.mk
+    #
+    fn_build_kernel_droidian_releng
+    fn_backup_compiled_objects
+    #
+elif [ "$1" == "clang" ]; then
+    kernel_dir_checks
+#   fn_install_prereqs_kernel_build
+    #
+#    fn_install_prereqs_droidian_kernel_info
+    fn_clang_manual_vars
+    fn_clang_manual_droidian_gcc_vars
+#    fn_clang_manual_lineage_gcc_vars
+#    fn_mrproper
+    fn_menuconfig
+#    fn_gen_main_defconfig
+#    fn_set_defconfig
+#    fn_merge_fragments
+#    fn_olddefconfig
+#    fn_savedefconfig
+    #### fn_build_kernel_clang_manual
+elif [ "$1" == "droidian-package" ]; then
+    ## Update releng to last unofficial testing
+    fn_releng_tools_cherry_berb_mods
+else
+    echo
+    echo "Please type \"releng\" or \"clang\""
+fi
