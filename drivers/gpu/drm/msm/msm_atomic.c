@@ -725,14 +725,18 @@ int msm_atomic_commit(struct drm_device *dev,
 	struct drm_plane_state *old_plane_state, *new_plane_state;
 	int i, ret;
 
+	pr_info("[DROIDIAN_DEBUG] msm_atomic_commit: entered, nonblock=%d\n", nonblock);
+
 	if (!priv || priv->shutdown_in_progress) {
 		DRM_ERROR("priv is null or shutdwon is in-progress\n");
+		pr_info("[DROIDIAN_DEBUG] msm_atomic_commit: returning -EINVAL (priv null or shutdown)\n");
 		return -EINVAL;
 	}
 
 	SDE_ATRACE_BEGIN("atomic_commit");
 	ret = drm_atomic_helper_prepare_planes(dev, state);
 	if (ret) {
+		pr_info("[DROIDIAN_DEBUG] msm_atomic_commit: prepare_planes failed with ret=%d\n", ret);
 		SDE_ATRACE_END("atomic_commit");
 		return ret;
 	}
@@ -821,12 +825,15 @@ retry:
 	drm_atomic_state_get(state);
 	msm_atomic_commit_dispatch(dev, state, c);
 
+	pr_info("[DROIDIAN_DEBUG] msm_atomic_commit: success, returning 0\n");
 	SDE_ATRACE_END("atomic_commit");
 	return 0;
 
 err_free:
+	pr_info("[DROIDIAN_DEBUG] msm_atomic_commit: err_free path, ret=%d\n", ret);
 	kfree(c);
 error:
+	pr_info("[DROIDIAN_DEBUG] msm_atomic_commit: error path, ret=%d\n", ret);
 	drm_atomic_helper_cleanup_planes(dev, state);
 	SDE_ATRACE_END("atomic_commit");
 	return ret;

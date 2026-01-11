@@ -3912,8 +3912,10 @@ static int _sde_hardware_pre_caps(struct sde_mdss_cfg *sde_cfg, uint32_t hw_rev)
 		sde_cfg->ctl_rev = SDE_CTL_CFG_VERSION_1_0_0;
 		sde_cfg->delay_prg_fetch_start = true;
 		sde_cfg->sui_ns_allowed = true;
-		sde_cfg->sui_misr_supported = true;
+		sde_cfg->sui_misr_supported = false;
 		sde_cfg->sui_block_xin_mask = 0x3F71;
+		pr_info("[DROIDIAN_DEBUG] SUI MISR patch active: sui_misr_supported=%d, sui_block_xin_mask=0x%X\n",
+			sde_cfg->sui_misr_supported, sde_cfg->sui_block_xin_mask);
 		sde_cfg->has_3d_merge_reset = true;
 		sde_cfg->has_sui_blendstage = true;
 		sde_cfg->has_qos_fl_nocalc = true;
