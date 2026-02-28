@@ -1016,9 +1016,17 @@ static int pmic_arb_offset_v5(struct spmi_pmic_arb *pmic_arb, u8 sid, u16 addr,
 		break;
 	case PMIC_ARB_CHANNEL_RW:
 		if (pmic_arb->apid_data[apid].write_ee != pmic_arb->ee) {
-			dev_err(&pmic_arb->spmic->dev, "disallowed SPMI write to sid=%u, addr=0x%04X\n",
+			/* RTC exception with DEBUG logging */
+			if (sid == 0 && addr >= 0x6000 && addr <= 0x61FF) {
+				/* RTC write - log and allow */
+				printk(KERN_WARNING "SPMI_DEBUG: RTC write ALLOWED sid=%u addr=0x%04X\n",
+					sid, addr);
+			} else {
+				/* Block non-RTC writes */
+				dev_err(&pmic_arb->spmic->dev, "disallowed SPMI write to sid=%u, addr=0x%04X\n",
 				sid, addr);
-			return -EPERM;
+				return -EPERM;
+			}
 		}
 		offset = 0x10000 * apid;
 		break;
