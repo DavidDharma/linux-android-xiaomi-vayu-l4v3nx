@@ -158,6 +158,8 @@ qpnp_rtc_set_time(struct device *dev, struct rtc_time *tm)
 	rtc_ctrl_reg = rtc_dd->rtc_ctrl_reg;
 	if (rtc_ctrl_reg & BIT_RTC_ENABLE) {
 		rtc_disabled = 1;
+		printk(KERN_WARNING "RTC_DEBUG: About to disable RTC (write to CTRL reg at 0x%04X)\n",
+			rtc_dd->rtc_base + REG_OFFSET_RTC_CTRL);
 		rtc_ctrl_reg &= ~BIT_RTC_ENABLE;
 		rc = qpnp_write_wrapper(rtc_dd, &rtc_ctrl_reg,
 				rtc_dd->rtc_base + REG_OFFSET_RTC_CTRL, 1);
@@ -171,6 +173,8 @@ qpnp_rtc_set_time(struct device *dev, struct rtc_time *tm)
 
 	/* Clear WDATA[0] */
 	reg = 0x0;
+	printk(KERN_WARNING "RTC_DEBUG: About to clear WDATA[0] (write to 0x%04X)\n",
+		rtc_dd->rtc_base + REG_OFFSET_RTC_WRITE);
 	rc = qpnp_write_wrapper(rtc_dd, &reg,
 				rtc_dd->rtc_base + REG_OFFSET_RTC_WRITE, 1);
 	if (rc) {
@@ -179,6 +183,9 @@ qpnp_rtc_set_time(struct device *dev, struct rtc_time *tm)
 	}
 
 	/* Write to WDATA[3], WDATA[2] and WDATA[1] */
+	printk(KERN_WARNING "RTC_DEBUG: About to write WDATA[3:1] (write to 0x%04X, 3 bytes)\n",
+		rtc_dd->rtc_base + REG_OFFSET_RTC_WRITE + 1);
+	printk(KERN_WARNING "RTC_DEBUG: Values: 0x%02X 0x%02X 0x%02X\n", value[1], value[2], value[3]);
 	rc = qpnp_write_wrapper(rtc_dd, &value[1],
 			rtc_dd->rtc_base + REG_OFFSET_RTC_WRITE + 1, 3);
 	if (rc) {
@@ -187,6 +194,9 @@ qpnp_rtc_set_time(struct device *dev, struct rtc_time *tm)
 	}
 
 	/* Write to WDATA[0] */
+	printk(KERN_WARNING "RTC_DEBUG: About to write WDATA[0] (write to 0x%04X)\n",
+		rtc_dd->rtc_base + REG_OFFSET_RTC_WRITE);
+	printk(KERN_WARNING "RTC_DEBUG: Value: 0x%02X\n", value[0]);
 	rc = qpnp_write_wrapper(rtc_dd, value,
 				rtc_dd->rtc_base + REG_OFFSET_RTC_WRITE, 1);
 	if (rc) {
@@ -197,6 +207,8 @@ qpnp_rtc_set_time(struct device *dev, struct rtc_time *tm)
 	/* Enable RTC H/w after writing on RTC register*/
 	if (rtc_disabled) {
 		rtc_ctrl_reg |= BIT_RTC_ENABLE;
+		printk(KERN_WARNING "RTC_DEBUG: About to re-enable RTC (write to CTRL reg at 0x%04X)\n",
+			rtc_dd->rtc_base + REG_OFFSET_RTC_CTRL);
 		rc = qpnp_write_wrapper(rtc_dd, &rtc_ctrl_reg,
 				rtc_dd->rtc_base + REG_OFFSET_RTC_CTRL, 1);
 		if (rc) {
@@ -206,6 +218,9 @@ qpnp_rtc_set_time(struct device *dev, struct rtc_time *tm)
 		}
 		rtc_dd->rtc_ctrl_reg = rtc_ctrl_reg;
 	}
+
+	printk(KERN_WARNING "RTC_DEBUG: All RTC writes completed successfully!\n");
+	printk(KERN_WARNING "RTC_DEBUG: Set time to %lu seconds since epoch\n", secs);
 
 	if (alarm_enabled) {
 		ctrl_reg |= BIT_RTC_ALARM_ENABLE;
