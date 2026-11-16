@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+
+include /usr/share/linux-packaging-snippets/kernel-snippet.mk
+
+# control override rule for kernel release extended info
+ifdef KERNEL_DEVELOPER_NAME
+include /usr/share/linux-packaging-snippets/control-override-kernel-release-extended.mk
+endif
+
+include /usr/share/linux-packaging-snippets/kernel-snippet-clang-conf-advanced.mk
+
+%:
+	dh $@
