@@ -50,9 +50,25 @@ jobs:
               apt-get install -y --no-install-recommends \
                 debhelper \
                 linux-packaging-snippets
+              
+              echo "=== Version linux-packaging-snippets ==="
+              dpkg -s linux-packaging-snippets | grep Version
+
+              echo "=== Snippets disponibles ==="
+              dpkg -L linux-packaging-snippets | grep -E \
+                'kernel-snippet|control-override'
+
+              echo "KERNEL_DEVELOPER_NAME=${KERNEL_DEVELOPER_NAME:-<non défini>}"
 
               chmod +x debian/rules
 
+              echo "=== debian/control ==="
+              ls -l debian/control
+
+              echo "=== Snippets disponibles ==="
+              dpkg -L linux-packaging-snippets | grep -E \
+                'kernel-snippet|control-override
+  
               rm -f debian/control
 
               debian/rules debian/control
