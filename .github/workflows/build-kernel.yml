@@ -69,6 +69,12 @@ jobs:
               dpkg -L linux-packaging-snippets | grep -E \
                 'kernel-snippet|control-override
   
+              echo "=== Règles du kernel-snippet.mk ==="
+              sed -n '1,240p' /usr/share/linux-packaging-snippets/kernel-snippet.mk
+
+              echo "=== Présence des snippets supplémentaires ==="
+              ls -l /usr/share/linux-packaging-snippets/
+
               rm -f debian/control
 
               debian/rules debian/control
