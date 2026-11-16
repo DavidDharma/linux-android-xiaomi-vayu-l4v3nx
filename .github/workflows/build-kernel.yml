@@ -1,0 +1,149 @@
+
+name: Build Droidian Kernel
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Xiaomi Vayu kernel
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+
+    steps:
+      # Récupération des sources
+      - name: Checkout kernel
+        uses: actions/checkout@v4
+        with:
+          ref: droidian
+          fetch-depth: 0
+
+      # Préparation des répertoires
+      - name: Prepare build directories
+        run: |
+          mkdir -p "$RUNNER_TEMP/packages"
+          mkdir -p artifacts/deb
+          mkdir -p artifacts/boot
+
+      # Récupération de l'environnement officiel Droidian
+      - name: Pull Droidian build environment
+        run: |
+          docker pull quay.io/droidian/build-essential:current-amd64
+
+      # Compilation et packaging
+      - name: Build kernel
+        run: |
+          set -o pipefail
+
+          docker run --rm --init \
+            -v "$GITHUB_WORKSPACE:/buildd/sources" \
+            -v "$RUNNER_TEMP/packages:/buildd" \
+            -w /buildd/sources \
+            quay.io/droidian/build-essential:current-amd64 \
+            bash -euo pipefail -c '
+              apt-get update
+
+              apt-get install -y --no-install-recommends \
+                linux-packaging-snippets
+
+              rm -f debian/control
+
+              debian/rules debian/control
+
+              RELENG_HOST_ARCH=arm64 releng-build-package
+            ' 2>&1 | tee "$RUNNER_TEMP/kernel-build.log"
+
+      # Récupération des paquets Debian
+      - name: Collect Debian packages
+        run: |
+          find "$RUNNER_TEMP/packages" \
+            -type f -name '*.deb' \
+            -exec cp -v {} artifacts/deb/ \;
+
+          test -n "$(find artifacts/deb -name '*.deb' -print -quit)"
+
+      # Extraction du boot.img
+      # Extraction des images de démarrage
+      # Extraction des images de démarrage
+      - name: Extract boot images
+        run: |
+          set -e
+
+          BOOT_DEB=$(find artifacts/deb \
+            -name 'linux-bootimage-4.14.*.deb' \
+            -print -quit)
+
+          if [ -z "$BOOT_DEB" ]; then
+            echo "Versioned bootimage Debian package not found!"
+            exit 1
+          fi
+
+          echo "Using package: $BOOT_DEB"
+          echo "=== Contenu du paquet bootimage ==="
+          dpkg-deb -c "$BOOT_DEB"
+
+          mkdir -p "$RUNNER_TEMP/bootimage"
+          mkdir -p artifacts/boot
+
+          dpkg-deb -x "$BOOT_DEB" "$RUNNER_TEMP/bootimage"
+          echo "=== Fichiers extraits ==="
+          find "$RUNNER_TEMP/bootimage" -type f -printf '%P\n' | sort
+
+          BOOT_DIR="$RUNNER_TEMP/bootimage/boot"
+
+          if [ ! -d "$BOOT_DIR" ]; then
+            echo "Boot directory not found in package!"
+            echo "Package contents:"
+            find "$RUNNER_TEMP/bootimage" -type f
+            exit 1
+          fi
+
+          for image in boot recovery dtbo vbmeta; do
+            FILE=$(find "$BOOT_DIR" \
+              -maxdepth 1 \
+              -type f \
+              -name "${image}.img-*" \
+              -print -quit)
+
+            if [ -n "$FILE" ]; then
+              cp "$FILE" "artifacts/boot/${image}.img"
+              echo "Extracted: ${image}.img"
+            else
+              echo "Not found: ${image}.img"
+            fi
+          done
+
+          test -f artifacts/boot/boot.img
+
+
+
+      # Informations de compilation
+      - name: Generate build information
+        if: always()
+        run: |
+          {
+            echo "Repository: $GITHUB_REPOSITORY"
+            echo "Branch: droidian"
+            echo "Commit: $(git rev-parse HEAD)"
+            echo "Date: $(date -u)"
+          } > artifacts/build-info.txt
+
+          if [ -d artifacts ]; then
+            find artifacts -type f -exec sha256sum {} \; \
+              > artifacts/SHA256SUMS
+          fi
+
+      # Publication des résultats
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiaomi-vayu-kernel
+          path: |
+            artifacts/
+            ${{ runner.temp }}/kernel-build.log
+          if-no-files-found: warn
+          retention-days: 30
