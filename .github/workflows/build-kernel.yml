@@ -70,13 +70,17 @@ jobs:
               echo "=== Présence des snippets supplémentaires ==="
               ls -l /usr/share/linux-packaging-snippets/
   
-              echo "=== Règles du kernel-snippet.mk ==="
-              sed -n '1,240p' /usr/share/linux-packaging-snippets/control-override-kernel-release-extended.mk
+              echo "=== Règles liées à debian/control ==="
+              grep -nE 'control\.in|debian/control|control:' \
+                /usr/share/linux-packaging-snippets/kernel-snippet.mk
 
-              echo "=== Règles du kernel-snippet.mk ==="
-              sed -n '1,240p' /usr/share/linux-packaging-snippets/kernel-snippet-clang-conf-advanced.mk
+              echo "=== Configuration Clang dans kernel-info.mk ==="
+              grep -nEi 'clang|llvm|BUILD_CC|BUILD_LLVM|BUILD_CLANG' \
+                debian/kernel-info.mk
+
+              echo "=== Fichier kernel-info.mk ==="
+              cat debian/kernel-info.mk
               
-
               rm -f debian/control
 
               debian/rules debian/control
