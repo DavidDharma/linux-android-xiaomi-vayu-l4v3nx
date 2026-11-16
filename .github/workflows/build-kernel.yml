@@ -55,8 +55,7 @@ jobs:
               dpkg -s linux-packaging-snippets | grep Version
 
               echo "=== Snippets disponibles ==="
-              dpkg -L linux-packaging-snippets | grep -E \
-                'kernel-snippet|control-override'
+              dpkg -L linux-packaging-snippets | grep -E "kernel-snippet|control-override"
 
               echo "KERNEL_DEVELOPER_NAME=${KERNEL_DEVELOPER_NAME:-<non défini>}"
 
@@ -65,15 +64,18 @@ jobs:
               echo "=== debian/control ==="
               ls -l debian/control
 
-              echo "=== Snippets disponibles ==="
-              dpkg -L linux-packaging-snippets | grep -E \
-                'kernel-snippet|control-override
-  
               echo "=== Règles du kernel-snippet.mk ==="
               sed -n '1,240p' /usr/share/linux-packaging-snippets/kernel-snippet.mk
 
               echo "=== Présence des snippets supplémentaires ==="
               ls -l /usr/share/linux-packaging-snippets/
+  
+              echo "=== Règles du kernel-snippet.mk ==="
+              sed -n '1,240p' /usr/share/linux-packaging-snippets/control-override-kernel-release-extended.mk
+
+              echo "=== Règles du kernel-snippet.mk ==="
+              sed -n '1,240p' /usr/share/linux-packaging-snippets/kernel-snippet-clang-conf-advanced.mk
+              
 
               rm -f debian/control
 
