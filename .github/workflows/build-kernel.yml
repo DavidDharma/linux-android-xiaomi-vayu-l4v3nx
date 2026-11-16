@@ -32,7 +32,12 @@ jobs:
       - name: Pull Droidian build environment
         run: |
           docker pull quay.io/droidian/build-essential:current-amd64
-
+      
+      - name: Prepare packaging
+        run: |
+          chmod +x debian/rules
+          debian/rules debian/control
+          
       # Compilation et packaging
       - name: Build kernel
         run: |
