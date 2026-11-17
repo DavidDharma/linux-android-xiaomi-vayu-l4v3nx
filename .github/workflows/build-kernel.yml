@@ -81,7 +81,9 @@ jobs:
               echo "=== Fichier kernel-info.mk ==="
               cat debian/kernel-info.mk
 
-              rm -f debian/control
+              echo "=== Deb ==="
+              apt-cache policy clang-android-12.0-r416183b
+              apt install clang-android-12.0-r416183b
 
               debian/rules debian/control
 
