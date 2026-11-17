@@ -85,6 +85,15 @@ jobs:
               apt-cache policy clang-android-12.0-r416183b
               apt install clang-android-12.0-r416183b
 
+              echo "=== Emplacement du compilateur Clang ==="
+              dpkg -L clang-android-12.0-r416183b | grep -E '/bin/clang(-[0-9]+)?$'
+
+              echo "=== Commande clang ==="
+              command -v clang || true
+
+              echo "=== Répertoires LLVM ==="
+              find /usr/lib -type f -name clang -o -name clang-12
+
               debian/rules debian/control
 
               RELENG_HOST_ARCH=arm64 releng-build-package
