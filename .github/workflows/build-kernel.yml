@@ -101,7 +101,7 @@ jobs:
               grep -nE "^(Source|Package|Build-Depends):" debian/control
 
               echo "=== Configuration des modules ==="
-              grep -E "^CONFIG_MODULES=|^# CONFIG_MODULES is not set|^CONFIG_MODULE_UNLOAD=|^CONFIG_MODVERSIONS=" out/KERNEL_OBJ/.config
+              # grep -E "^CONFIG_MODULES=|^# CONFIG_MODULES is not set|^CONFIG_MODULE_UNLOAD=|^CONFIG_MODVERSIONS=" out/KERNEL_OBJ/.config
 
               RELENG_HOST_ARCH=arm64 releng-build-package
             ' 2>&1 | tee "$RUNNER_TEMP/kernel-build.log"
