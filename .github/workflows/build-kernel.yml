@@ -62,17 +62,7 @@ jobs:
               chmod +x debian/rules
 
               echo "=== debian/control ==="
-              ls -l debian/control
-
-              echo "=== Règles du kernel-snippet.mk ==="
-              sed -n '1,240p' /usr/share/linux-packaging-snippets/kernel-snippet.mk
-
-              echo "=== Présence des snippets supplémentaires ==="
-              ls -l /usr/share/linux-packaging-snippets/
-  
-              echo "=== Règles liées à debian/control ==="
-              grep -nE "control\.in|debian/control|control:" \
-                /usr/share/linux-packaging-snippets/kernel-snippet.mk
+              # ls -l debian/control
 
               echo "=== Configuration Clang dans kernel-info.mk ==="
               grep -nEi "clang|llvm|BUILD_CC|BUILD_LLVM|BUILD_CLANG" \
@@ -93,6 +83,16 @@ jobs:
 
               echo "=== Répertoires LLVM ==="
               find /usr/lib -type f \( -name clang -o -name clang-12 \)
+
+              echo "=== Règles du kernel-snippet.mk ==="
+              sed -n '1,240p' /usr/share/linux-packaging-snippets/kernel-snippet.mk
+
+              echo "=== Présence des snippets supplémentaires ==="
+              ls -l /usr/share/linux-packaging-snippets/
+  
+              echo "=== Règles liées à debian/control ==="
+              grep -nE "control\.in|debian/control|control:" \
+                /usr/share/linux-packaging-snippets/kernel-snippet.mk
 
               debian/rules debian/control
 
