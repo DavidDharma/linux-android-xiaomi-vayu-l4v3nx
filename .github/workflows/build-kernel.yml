@@ -96,6 +96,10 @@ jobs:
 
               debian/rules debian/control
 
+              echo "=== Vérification du control généré ==="
+              test -s debian/control
+              grep -nE "^(Source|Package|Build-Depends):" debian/control
+
               RELENG_HOST_ARCH=arm64 releng-build-package
             ' 2>&1 | tee "$RUNNER_TEMP/kernel-build.log"
 
