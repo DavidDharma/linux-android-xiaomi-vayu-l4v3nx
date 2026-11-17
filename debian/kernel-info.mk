@@ -266,7 +266,7 @@ CLANG_VERSION = 10
 # When using clang and the clang-conf-advanced snippet,
 # the clang path will be automatically configured
 # Anyway, any other paths configured in BUILD_PATH will be appended to PATH after the clang path
-BUILD_PATH = /path/to/custom/toolchain/bin
+BUILD_PATH = /usr/lib/llvm-android-12.0-r416183b/bin
 
 # Extra packages to add to the Build-Depends section. Mainline builds
 # can have this section empty, unless cross-building.
@@ -289,7 +289,7 @@ CLANG_CUSTOM = 1
 # BUILD_PATH_CLANG_CUSTOM:
 # This var is required here, but is autoconfigured by the
 # clang-conf-advanced snippet
-BUILD_PATH_CLANG_CUSTOM = /some/path/bin
+BUILD_PATH_CLANG_CUSTOM = /usr/lib/llvm-android-12.0-r416183b/bin
 
 # DOWNLOAD_CLANG_CUSTOM
 # REQS:
