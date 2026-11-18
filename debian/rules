@@ -2,12 +2,8 @@
 
 include /usr/share/linux-packaging-snippets/kernel-snippet.mk
 
-# control override rule for kernel release extended info
-ifdef KERNEL_DEVELOPER_NAME
-include /usr/share/linux-packaging-snippets/control-override-kernel-release-extended.mk
-endif
-
-include /usr/share/linux-packaging-snippets/kernel-snippet-clang-conf-advanced.mk
+# Use external device-tree-compiler
+BUILD_COMMAND := $(BUILD_COMMAND) DTC_EXT=/usr/bin/dtc
 
 %:
 	dh $@
