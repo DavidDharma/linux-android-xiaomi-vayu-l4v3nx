@@ -18,7 +18,6 @@ jobs:
       - name: Checkout kernel
         uses: actions/checkout@v4
         with:
-          ref: droidian
           fetch-depth: 0
 
       # Préparation des répertoires
@@ -176,7 +175,7 @@ jobs:
         run: |
           {
             echo "Repository: $GITHUB_REPOSITORY"
-            echo "Branch: droidian"
+            echo "Branch: ${GITHUB_REF_NAME}"
             echo "Commit: $(git rev-parse HEAD)"
             echo "Date: $(date -u)"
           } > artifacts/build-info.txt
