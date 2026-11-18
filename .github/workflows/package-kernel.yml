@@ -97,6 +97,14 @@ jobs:
           echo "=== SHA256 ==="
           sha256sum artifacts/boot/*
           
-
           echo "=== Paquets Debian disponibles ==="
           find downloaded -type f -name '*.deb' -printf '%p\n' | sort
+
+      - name: Upload extracted boot images
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiaomi-vayu-boot-images
+          path: artifacts/boot/
+          if-no-files-found: error
+          retention-days: 30
+          
