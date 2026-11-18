@@ -39,5 +39,23 @@ jobs:
           echo "=== Fichiers récupérés ==="
           find downloaded -type f -print | sort
 
+      - name: Inspect bootimage packages
+        run: |
+          DEB_DIR=$(find downloaded -type d -path '*/artifacts/deb' -print -quit)
+
+          echo "Répertoire des paquets : $DEB_DIR"
+
+          for DEB in "$DEB_DIR"/linux-bootimage*.deb; do
+            echo
+            echo "========================================"
+            echo "Paquet : $(basename "$DEB")"
+            echo "========================================"
+
+            dpkg-deb -f "$DEB" Package Version Depends
+            echo
+            dpkg-deb -c "$DEB"
+          done
+          
+
           echo "=== Paquets Debian disponibles ==="
           find downloaded -type f -name '*.deb' -printf '%p\n' | sort
