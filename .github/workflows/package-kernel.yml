@@ -55,6 +55,47 @@ jobs:
             echo
             dpkg-deb -c "$DEB"
           done
+
+      - name: Extract boot images
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEB_DIR=$(find downloaded -type d -path '*/artifacts/deb' -print -quit)
+
+          BOOT_DEB=$(find "$DEB_DIR" -maxdepth 1 \
+            -type f -name 'linux-bootimage-4.14-0-xiaomi-vayu_*.deb' \
+            -print -quit)
+
+          if [ -z "$BOOT_DEB" ]; then
+            echo "ERREUR : paquet bootimage versionné introuvable"
+            exit 1
+          fi
+
+          echo "Paquet utilisé : $BOOT_DEB"
+
+          mkdir -p artifacts/boot
+          mkdir -p "$RUNNER_TEMP/bootimage"
+
+          dpkg-deb -x "$BOOT_DEB" "$RUNNER_TEMP/bootimage"
+
+          cp -v "$RUNNER_TEMP/bootimage/boot/boot.img-4.14-0-xiaomi-vayu" \
+            artifacts/boot/boot.img
+
+          cp -v "$RUNNER_TEMP/bootimage/boot/dtbo.img-4.14-0-xiaomi-vayu" \
+            artifacts/boot/dtbo.img
+
+          cp -v "$RUNNER_TEMP/bootimage/boot/recovery.img-4.14-0-xiaomi-vayu" \
+            artifacts/boot/recovery.img
+
+          cp -v "$RUNNER_TEMP/bootimage/boot/vbmeta.img-4.14-0-xiaomi-vayu" \
+            artifacts/boot/vbmeta.img
+
+          echo "=== Images extraites ==="
+          ls -lh artifacts/boot/
+
+          echo "=== SHA256 ==="
+          sha256sum artifacts/boot/*
           
 
           echo "=== Paquets Debian disponibles ==="
