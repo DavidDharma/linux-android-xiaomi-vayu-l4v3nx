@@ -173,12 +173,24 @@ jobs:
       - name: Generate build information
         if: always()
         run: |
+          mkdir -p artifacts/config
+
           {
             echo "Repository: $GITHUB_REPOSITORY"
             echo "Branch: ${GITHUB_REF_NAME}"
             echo "Commit: $(git rev-parse HEAD)"
             echo "Date: $(date -u)"
           } > artifacts/build-info.txt
+
+          echo "=== Configuration finale du noyau ==="
+          if [ -s out/KERNEL_OBJ/.config ]; then
+            cp -v out/KERNEL_OBJ/.config artifacts/config/kernel.config
+            grep -nE '^CONFIG_BACKLIGHT_CLASS_DEVICE=|^# CONFIG_BACKLIGHT_CLASS_DEVICE is not set|^CONFIG_BACKLIGHT=' \
+              artifacts/config/kernel.config || true
+          else
+            echo "ATTENTION : out/KERNEL_OBJ/.config introuvable"
+            find out -name .config -type f -print 2>/dev/null || true
+          fi
 
           if [ -d artifacts ]; then
             find artifacts -type f -exec sha256sum {} \; \
