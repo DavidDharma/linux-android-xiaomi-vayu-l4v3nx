@@ -1,0 +1,33 @@
+
+name: Package Droidian Kernel
+
+on:
+  workflow_dispatch:
+#on:
+#  workflow_run:
+#    workflows: ["Build Droidian Kernel"]
+#    types:
+#      - completed
+      
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  package:
+#    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: xiaomi-vayu-kernel
+          path: artifacts
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+#          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: List Debian packages
+        run: |
+          echo "=== Paquets Debian disponibles ==="
+          find artifacts/deb -maxdepth 1 -type f -name '*.deb' -printf '%f\n' | sort
