@@ -122,6 +122,15 @@ jobs:
 
           echo "Commit de compilation : $HEAD_SHA"
 
+          DEFAULT_BRANCH=$(gh api "repos/${REPO}" --jq '.default_branch')
+
+          echo "Branche par défaut : $DEFAULT_BRANCH"
+          echo "=== Fichiers de workflows différents ==="
+
+          gh api "repos/${REPO}/compare/${DEFAULT_BRANCH}...${HEAD_SHA}" \
+            --jq '.files[].filename' |
+            grep '^\.github/workflows/' || true
+
           if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             echo "Release existante : ajout des paquets Debian"
 
