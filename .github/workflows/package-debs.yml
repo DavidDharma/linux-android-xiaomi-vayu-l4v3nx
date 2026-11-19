@@ -21,11 +21,14 @@ on:
         type: string
 
 permissions:
-  actions: write
+  actions: read
   contents: write
 
 jobs:
   package:
+    permissions:
+      actions: read
+      contents: write
     runs-on: ubuntu-latest
 
     steps:
