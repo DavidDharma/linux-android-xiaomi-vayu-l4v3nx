@@ -119,28 +119,44 @@ jobs:
       # Extraction des images de démarrage
       - name: Extract boot images
         run: |
-          set -e
+          set -euo pipefail
 
-          BOOT_DEB=$(find artifacts/deb \
-            -name 'linux-bootimage-4.14.*.deb' \
-            -print -quit)
+          echo "=== Recherche du paquet bootimage ==="
 
-          if [ -z "$BOOT_DEB" ]; then
-            echo "Versioned bootimage Debian package not found!"
+          if [ ! -d artifacts/deb ]; then
+            echo "ERREUR : artifacts/deb introuvable"
+            find artifacts -maxdepth 3 -type f -print | sort
             exit 1
           fi
 
-          echo "Using package: $BOOT_DEB"
-          echo "=== Contenu du paquet bootimage ==="
+          BOOT_DEB=$(find artifacts/deb \
+            -type f \
+            -name 'linux-bootimage-4.14-0-xiaomi-vayu_*.deb' \
+            -print -quit)
+
+          if [ -z "$BOOT_DEB" ]; then
+            echo "ERREUR : paquet bootimage versionné introuvable"
+            echo "=== Paquets Debian disponibles ==="
+            find artifacts/deb -type f -name '*.deb' -print | sort
+            exit 1
+          fi
+
+          echo "Using package : $BOOT_DEB"
+
+          echo "=== Informations du paquet ==="
+          dpkg-deb -f "$BOOT_DEB" Package Version Architecture
+
+          echo "=== Contenu du paquet ==="
           dpkg-deb -c "$BOOT_DEB"
 
-          mkdir -p "$RUNNER_TEMP/bootimage"
           mkdir -p artifacts/boot
+          mkdir -p "$RUNNER_TEMP/bootimage"
 
           dpkg-deb -x "$BOOT_DEB" "$RUNNER_TEMP/bootimage"
+
           echo "=== Fichiers extraits ==="
           find "$RUNNER_TEMP/bootimage" -type f -printf '%P\n' | sort
-
+          
           BOOT_DIR="$RUNNER_TEMP/bootimage/boot"
 
           if [ ! -d "$BOOT_DIR" ]; then
@@ -150,22 +166,26 @@ jobs:
             exit 1
           fi
 
-          for image in boot recovery dtbo vbmeta; do
-            FILE=$(find "$BOOT_DIR" \
-              -maxdepth 1 \
-              -type f \
-              -name "${image}.img-*" \
-              -print -quit)
+          echo "=== Extraction des images ==="
 
-            if [ -n "$FILE" ]; then
-              cp "$FILE" "artifacts/boot/${image}.img"
-              echo "Extracted: ${image}.img"
-            else
-              echo "Not found: ${image}.img"
+          for image in boot dtbo recovery vbmeta; do
+            SOURCE="$BOOT_DIR/${image}.img-4.14-0-xiaomi-vayu"
+
+            if [ ! -f "$SOURCE" ]; then
+              echo "ERREUR : image introuvable : $SOURCE"
+              echo "=== Fichiers présents ==="
+              find "$BOOT_DIR" -maxdepth 1 -type f -printf '%f\n'
+              exit 1
             fi
+
+            cp -v "$SOURCE" "artifacts/boot/${image}.img"
           done
 
-          test -f artifacts/boot/boot.img
+          echo "=== Images extraites ==="
+          ls -lh artifacts/boot/
+
+          echo "=== SHA256 ==="
+          sha256sum artifacts/boot/*
 
 
 
