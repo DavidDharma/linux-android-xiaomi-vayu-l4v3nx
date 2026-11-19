@@ -96,6 +96,7 @@ jobs:
           retention-days: 30
 
 
+
       - name: Publish Debian packages to GitHub Release
         if: inputs.publish_release
         env:
@@ -107,22 +108,24 @@ jobs:
           set -euo pipefail
 
           TAG="v${RELEASE_VERSION}"
+          REPO="$GITHUB_REPOSITORY"
 
           echo "=== Publication des paquets Debian : $TAG ==="
 
           HEAD_SHA=$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
+            "repos/${REPO}/actions/runs/${RUN_ID}" \
             --jq '.head_sha')
 
           echo "Commit de compilation : $HEAD_SHA"
 
-          if gh release view "$TAG" >/dev/null 2>&1; then
+          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
             echo "Release existante : ajout des paquets Debian"
 
             gh release upload "$TAG" \
               artifacts/deb/*.deb \
               artifacts/deb/SHA256SUMS \
               artifacts/kernel-debs.zip \
+              --repo "$REPO" \
               --clobber
           else
             echo "Création de la Release : $TAG"
@@ -131,9 +134,11 @@ jobs:
               artifacts/deb/*.deb \
               artifacts/deb/SHA256SUMS \
               artifacts/kernel-debs.zip \
+              --repo "$REPO" \
               --title "$TAG" \
               --notes "Paquets Debian du noyau Xiaomi Vayu - $TAG" \
               --target "$HEAD_SHA"
           fi
 
           echo "=== Publication terminée ==="
+
