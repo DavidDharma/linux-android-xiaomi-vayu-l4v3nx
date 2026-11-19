@@ -1,0 +1,71 @@
+
+name: Package Droidian Debian Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "ID de l'exécution de compilation à réutiliser"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Récupération de l'artifact de compilation existant
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: xiaomi-vayu-kernel
+          path: downloaded
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ inputs.run_id }}
+
+      # Extraction des paquets Debian
+      - name: Collect Debian packages
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          DEB_DIR=$(find downloaded -type d -path '*/artifacts/deb' -print -quit)
+
+          if [ -z "$DEB_DIR" ]; then
+            echo "ERREUR : répertoire artifacts/deb introuvable"
+            exit 1
+          fi
+
+          mkdir -p artifacts/deb
+
+          find "$DEB_DIR" -maxdepth 1 -type f -name '*.deb' \
+            -exec cp -v {} artifacts/deb/ \;
+
+          DEB_COUNT=$(find artifacts/deb -maxdepth 1 -type f -name '*.deb' | wc -l)
+
+          if [ "$DEB_COUNT" -eq 0 ]; then
+            echo "ERREUR : aucun paquet Debian récupéré"
+            exit 1
+          fi
+
+          echo "=== Paquets Debian récupérés : $DEB_COUNT ==="
+          ls -lh artifacts/deb/
+
+          echo "=== SHA256 ==="
+          (
+            cd artifacts/deb
+            sha256sum *.deb > SHA256SUMS
+            cat SHA256SUMS
+          )
+
+      # Publication des paquets Debian
+      - name: Upload Debian packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: xiaomi-vayu-debian-packages
+          path: artifacts/deb/
+          if-no-files-found: error
+          retention-days: 30
