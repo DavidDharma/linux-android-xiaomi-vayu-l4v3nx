@@ -98,18 +98,16 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
-
-
       - name: Publish Debian packages to GitHub Release
         if: inputs.publish_release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "latest"
-          name: "Latest droidian-phoc build"
+          tag_name: "v${{ inputs.release_version }}"
+          name: "Droidian Xiaomi Vayu - v${{ inputs.release_version }}"
           files: |
-            buildd-results/*.deb
-            buildd-results/*.ddeb
-            buildd-results/*.changes
-            buildd-results/*.buildinfo
+            artifacts/deb/*.deb
+            artifacts/deb/SHA256SUMS
+            artifacts/kernel-debs.zip
+          overwrite_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
