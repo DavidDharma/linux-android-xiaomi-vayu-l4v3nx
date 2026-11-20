@@ -102,56 +102,18 @@ jobs:
 
       - name: Publish Debian packages to GitHub Release
         if: inputs.publish_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "latest"
+          name: "Latest droidian-phoc build"
+          files: |
+            buildd-results/*.deb
+            buildd-results/*.ddeb
+            buildd-results/*.changes
+            buildd-results/*.buildinfo
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RUN_ID: ${{ inputs.run_id }}
-          RELEASE_VERSION: ${{ inputs.release_version }}
-        shell: bash
-        run: |
-          set -euo pipefail
 
-          TAG="v${RELEASE_VERSION}"
-          REPO="$GITHUB_REPOSITORY"
-
-          echo "=== Publication des paquets Debian : $TAG ==="
-
-          HEAD_SHA=$(gh api \
-            "repos/${REPO}/actions/runs/${RUN_ID}" \
-            --jq '.head_sha')
-
-          echo "Commit de compilation : $HEAD_SHA"
-
-          DEFAULT_BRANCH=$(gh api "repos/${REPO}" --jq '.default_branch')
-
-          echo "Branche par défaut : $DEFAULT_BRANCH"
-          echo "=== Fichiers de workflows différents ==="
-
-          gh api "repos/${REPO}/compare/${DEFAULT_BRANCH}...${HEAD_SHA}" \
-            --jq '.files[].filename' |
-            grep '^\.github/workflows/' || true
-
-          if gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
-            echo "Release existante : ajout des paquets Debian"
-
-            gh release upload "$TAG" \
-              artifacts/deb/*.deb \
-              artifacts/deb/SHA256SUMS \
-              artifacts/kernel-debs.zip \
-              --repo "$REPO" \
-              --clobber
-          else
-            echo "Création de la Release : $TAG"
-
-            gh release create "$TAG" \
-              artifacts/deb/*.deb \
-              artifacts/deb/SHA256SUMS \
-              artifacts/kernel-debs.zip \
-              --repo "$REPO" \
-              --title "$TAG" \
-              --notes "Paquets Debian du noyau Xiaomi Vayu - $TAG" \
-              --target "$HEAD_SHA"
-          fi
 
           echo "=== Publication terminée ==="
 
