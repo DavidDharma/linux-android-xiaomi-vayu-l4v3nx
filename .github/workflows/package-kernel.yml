@@ -123,43 +123,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           
-
-      - name: Publish kernel images to GitHub Release
-        if: github.event_name == 'workflow_dispatch' && inputs.publish_release
+      - name: Publish boot images to GitHub Release
+        if: inputs.publish_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "v${{ inputs.release_version }}"
+          name: "Droidian Xiaomi Vayu - v${{ inputs.release_version }}"
+          files: |
+            artifacts/boot/*.img
+            artifacts/kernel-images.zip
+          overwrite_files: true
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RUN_ID: ${{ inputs.run_id }}
-          RELEASE_VERSION: ${{ inputs.release_version }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          TAG="v${RELEASE_VERSION}"
-
-          echo "=== Publication de la Release $TAG ==="
-
-          HEAD_SHA=$(gh api \
-            "repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
-            --jq '.head_sha')
-
-          echo "Commit de compilation : $HEAD_SHA"
-
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release existante : ajout des images"
-
-            gh release upload "$TAG" \
-              artifacts/boot/*.img \
-              artifacts/kernel-images.zip \
-              --clobber
-          else
-            echo "Création de la Release : $TAG"
-
-            gh release create "$TAG" \
-              artifacts/boot/*.img \
-              artifacts/kernel-images.zip \
-              --title "$TAG" \
-              --notes "Images du noyau Xiaomi Vayu - $TAG" \
-              --target "$HEAD_SHA"
-          fi
-
-          echo "=== Publication terminée ==="
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
