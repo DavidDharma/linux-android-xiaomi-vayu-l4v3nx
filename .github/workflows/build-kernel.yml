@@ -226,6 +226,21 @@ jobs:
             find out -name .config -type f -print 2>/dev/null || true
           fi
 
+          echo "=== Sauvegarde des fichiers Device Tree 2 ==="          
+          if [ -s "out/KERNEL_OBJ/dtb-merged" ]; then
+            cp -v out/KERNEL_OBJ/dtb-merged \
+              artifacts/config/dtb-merged2
+          else                  
+            echo "ATTENTION : out/KERNEL_OBJ/dtb-merged introuvable apres le packaging"
+          fi
+
+          if [ -s "out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo" ]; then              
+            cp -v out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo \
+              artifacts/config/vayu-sm8150-overlay.dtbo2
+          else                  
+            echo "ATTENTION : out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo introuvable apres le packaging"
+          fi
+
           if [ -d artifacts ]; then
             find artifacts -type f -exec sha256sum {} \; \
               > artifacts/SHA256SUMS
