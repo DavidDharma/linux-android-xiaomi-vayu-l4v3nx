@@ -104,21 +104,21 @@ jobs:
 
               echo "=== Sauvegarde des fichiers Device Tree 1 ==="
 
-              mkdir -p artifacts/config
+              # mkdir -p artifacts/config
 
-              if [ -s "out/KERNEL_OBJ/dtb-merged" ]; then
-                cp -v out/KERNEL_OBJ/dtb-merged \
-                  artifacts/config/dtb-merged1
-              else                  
-                echo "ATTENTION : out/KERNEL_OBJ/dtb-merged introuvable avant le packaging"
-              fi
+              # if [ -s "out/KERNEL_OBJ/dtb-merged" ]; then
+              #  cp -v out/KERNEL_OBJ/dtb-merged \
+              #    artifacts/config/dtb-merged1
+              # else                  
+              #  echo "ATTENTION : out/KERNEL_OBJ/dtb-merged introuvable avant le packaging"
+              # fi
 
-              if [ -s "out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo" ]; then              
-                cp -v out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo \
-                  artifacts/config/vayu-sm8150-overlay.dtbo1
-              else                  
-                echo "ATTENTION : out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo introuvable avant le packaging"
-              fi
+              # if [ -s "out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo" ]; then              
+              #  cp -v out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo \
+              #    artifacts/config/vayu-sm8150-overlay.dtbo1
+              # else                  
+              #  echo "ATTENTION : out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo introuvable avant le packaging"
+              # fi
                 
               RELENG_HOST_ARCH=arm64 releng-build-package
             ' 2>&1 | tee "$RUNNER_TEMP/kernel-build.log"
