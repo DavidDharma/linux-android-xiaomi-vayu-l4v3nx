@@ -105,11 +105,6 @@ jobs:
               echo "=== Sauvegarde des fichiers Device Tree 1 ==="
 
               mkdir -p artifacts/config
-              if [ -s "$DTB_MERGED" ]; then
-                cp -v "$DTB_MERGED" artifacts/config/dtb-merged
-              else
-                echo "ATTENTION : $DTB_MERGED introuvable avant le packaging"
-              fi
 
               if [ -s "out/KERNEL_OBJ/dtb-merged" ]; then
                 cp -v out/KERNEL_OBJ/dtb-merged \
