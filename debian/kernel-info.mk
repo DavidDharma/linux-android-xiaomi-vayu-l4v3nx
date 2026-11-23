@@ -52,7 +52,7 @@ KERNEL_CONFIG_USE_FRAGMENTS = 1
 
 # Enable kernel config device extra fragments (extended)
 KERNEL_CONFIG_USE_EXTRA_FRAGMENTS = 1
-KERNEL_CONFIG_EXTRA_FRAGMENTS = vayu-halium.config vayu-droidian.config vayu-lxc.config vayu-security.config vayu-network.config vayu-camera.config vayu-kvm.config vayu-container.config
+KERNEL_CONFIG_EXTRA_FRAGMENTS = vayu-halium.config vayu-droidian.config vayu-lxc.config vayu-security.config vayu-network.config vayu-camera.config vayu-kvm.config vayu-container.config  vayu-cpu.config vayu-lto-disable.config
 # vayu-cpu.config
 # vayu-boot.config
 # vayu-lto-disable.config
