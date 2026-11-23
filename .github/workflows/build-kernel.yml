@@ -102,6 +102,29 @@ jobs:
               echo "=== Configuration des modules ==="
               # grep -E "^CONFIG_MODULES=|^# CONFIG_MODULES is not set|^CONFIG_MODULE_UNLOAD=|^CONFIG_MODVERSIONS=" out/KERNEL_OBJ/.config
 
+              echo "=== Sauvegarde des fichiers Device Tree 1 ==="
+
+              mkdir -p artifacts/config
+              if [ -s "$DTB_MERGED" ]; then
+                cp -v "$DTB_MERGED" artifacts/config/dtb-merged
+              else
+                echo "ATTENTION : $DTB_MERGED introuvable avant le packaging"
+              fi
+
+              if [ -s "out/KERNEL_OBJ/dtb-merged" ]; then
+                cp -v out/KERNEL_OBJ/dtb-merged \
+                  artifacts/config/dtb-merged1
+              else                  
+                echo "ATTENTION : out/KERNEL_OBJ/dtb-merged introuvable avant le packaging"
+              fi
+
+              if [ -s "out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo" ]; then              
+                cp -v out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo \
+                  artifacts/config/vayu-sm8150-overlay.dtbo1
+              else                  
+                echo "ATTENTION : out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo introuvable avant le packaging"
+              fi
+                
               RELENG_HOST_ARCH=arm64 releng-build-package
             ' 2>&1 | tee "$RUNNER_TEMP/kernel-build.log"
 
@@ -215,6 +238,21 @@ jobs:
           if [ -d artifacts ]; then
             find artifacts -type f -exec sha256sum {} \; \
               > artifacts/SHA256SUMS
+          fi
+
+          echo "=== Sauvegarde des fichiers Device Tree 2 ==="          
+          if [ -s "out/KERNEL_OBJ/dtb-merged" ]; then
+            cp -v out/KERNEL_OBJ/dtb-merged \
+              artifacts/config/dtb-merged2
+          else                  
+            echo "ATTENTION : out/KERNEL_OBJ/dtb-merged introuvable apres le packaging"
+          fi
+
+          if [ -s "out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo" ]; then              
+            cp -v out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo \
+              artifacts/config/vayu-sm8150-overlay.dtbo2
+          else                  
+            echo "ATTENTION : out/KERNEL_OBJ/arch/arm64/boot/dts/qcom/vayu-sm8150-overlay.dtbo introuvable apres le packaging"
           fi
 
       # Publication des résultats
