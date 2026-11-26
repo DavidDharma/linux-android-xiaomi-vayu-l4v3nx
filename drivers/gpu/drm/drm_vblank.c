@@ -908,14 +908,21 @@ EXPORT_SYMBOL(drm_crtc_send_vblank_event);
 
 static int __enable_vblank(struct drm_device *dev, unsigned int pipe)
 {
-	if (drm_core_check_feature(dev, DRIVER_MODESET)) {
-		struct drm_crtc *crtc = drm_crtc_from_index(dev, pipe);
+    pr_info("__enable_vblank dans drm_vblank.c #1\n");
 
-		if (crtc->funcs->enable_vblank)
-			return crtc->funcs->enable_vblank(crtc);
-	}
+    if (drm_core_check_feature(dev, DRIVER_MODESET)) {
+        pr_info("__enable_vblank dans drm_vblank.c #2\n");
 
-	return dev->driver->enable_vblank(dev, pipe);
+        struct drm_crtc *crtc = drm_crtc_from_index(dev, pipe);
+
+        if (crtc->funcs->enable_vblank) {
+            pr_info("__enable_vblank dans drm_vblank.c #3\n");
+            return crtc->funcs->enable_vblank(crtc);
+        }
+    }
+
+    pr_info("__enable_vblank dans drm_vblank.c #4\n");
+    return dev->driver->enable_vblank(dev, pipe);
 }
 
 static int drm_vblank_enable(struct drm_device *dev, unsigned int pipe)
